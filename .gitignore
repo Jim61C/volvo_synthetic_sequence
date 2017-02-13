@@ -27,3 +27,7 @@
 *.exe
 *.out
 *.app
+
+# ignore build and data
+data/
+build/
