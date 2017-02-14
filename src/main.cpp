@@ -2,6 +2,7 @@
 #include "DataManager.h"
 #include "FrameLoader.h"
 #include "BgSubtractor.h"
+#include "Renderer.h"
 #include <string.h>
 
 using namespace std;
@@ -24,23 +25,52 @@ int main(int argc, char **argv)
 
     // input path 
     string input_dir = "../data/Walking";
+    string char_dir = "../data/chars";
     string data_source = "OTB";
 
     BgSubtractor subtractor;
+    Renderer renderer(char_dir);
 
-    int begin_frame = 0, end_frame = 100, step = 1;
+
+    int begin_frame = 0, end_frame = 412, step = 1;
     FrameLoader frame_loader(input_dir, data_source, begin_frame, end_frame, step);
     DataManager dm;
     frame_loader.load(dm);
 
     cout << "number of frames read in:" << dm.frames.size() << endl;
+    cout << "number of boxes read in:" << dm.boxes.size() << endl;
+    cout << "dm.boxes[0].rows:" << dm.boxes[0].rows << endl;
+    cout << "dm.boxes[0].cols:" << dm.boxes[0].cols << endl;
     
-    for (int i = 0;i< dm.frames.size();i++) {
+    Mat bg = BgSubtractor::extractBGFromFrames(dm.frames);
+    Mat character = renderer.loadCharacter("char1.png");
+
+    for (int i = 0;i<dm.frames.size();i++) {
         Mat this_frame = dm.frames[i];
-        Mat fgbg = subtractor.extractfgbg(this_frame);
-        imshow("fgbg", fgbg);
+        Mat this_fgbg = subtractor.extractfgbg(this_frame);
+
+        // blend characters
+        Mat this_bg = bg.clone();
+        for (int j = 0;j<dm.boxes.size();j++) {
+            Mat this_frame_char_rect = dm.boxes[j].rowRange(i, i+1);
+            cout << "bounding box at frame "<< i << " and box " << j << ":\n" << this_frame_char_rect << endl;
+
+            renderer.overlayCharacter(this_bg, character, this_frame_char_rect, this_fgbg);
+        }
+        
+        // std::ostringstream oss;
+        // oss << "overlayCharacter in frame: " << i;
+        // imshow(oss.str(), this_bg);
+        imshow("overlayCharacter on bg", this_bg);
         waitKey(0);
     }
+
+    // for (int i = 0;i< dm.frames.size();i++) {
+    //     Mat this_frame = dm.frames[i];
+    //     Mat fgbg = subtractor.extractfgbg(this_frame);
+    //     imshow("fgbg", fgbg);
+    //     waitKey(0);
+    // }
 
 
 

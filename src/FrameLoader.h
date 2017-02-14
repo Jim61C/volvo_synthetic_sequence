@@ -5,6 +5,14 @@
 using namespace std;
 
 class FrameLoader {
+
+private:
+	string directory;
+	string data_source;
+	int begin_frame;
+	int end_frame;
+	int step;
+
 public:
 	FrameLoader(string input_dir, 
 		string data_source, 
@@ -20,11 +28,5 @@ public:
 	void load(DataManager & dm);
 	bool has_suffix(const string& s, const string& suffix);
 	void loadOTB(DataManager& dm, string directory, int begin_frame, int end_frame, int step);
-
-private:
-	string directory;
-	string data_source;
-	int begin_frame;
-	int end_frame;
-	int step;
+	void loadBoundingBoxes(DataManager & dm);
 };

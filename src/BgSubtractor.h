@@ -1,4 +1,5 @@
 #include "CommonCV.h"
+#include "Common.h"
 
 class BgSubtractor {
 public:
@@ -7,5 +8,9 @@ public:
 
     BgSubtractor();
     cv::Mat extractfgbg(cv::Mat frame);
+
+
+    // static API for getting the bg after learned over frames
+   	static cv::Mat extractBGFromFrames(vector<Mat> &frames);
 
 };
