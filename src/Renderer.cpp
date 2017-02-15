@@ -27,9 +27,11 @@ void Renderer::overlayCharacter(Mat &bg, Mat character, Mat bounding_box, Mat fg
 	Rect roi = Rect(bottom_mid_x - target_width/2, bootom_mid_y - target_height, target_width, target_height);
 	Mat bg_roi = bg(roi);
 
-	// create an inverse background mask from fgbg for current frame
+	// create an inverse background mask (bg will be dark and target will be white) from fgbg for current frame
 	Mat bg_mask = getBackgroundMask(fgbg, roi);
-	imshow("bg_mask for this frame:", bg_mask);
+	Mat bg_mask_thresholded;
+	threshold(bg_mask, bg_mask_thresholded, 5, 255, cv::THRESH_BINARY);
+	imshow("bg_mask for this frame:", bg_mask_thresholded);
 	waitKey(0);
 
 	// create a mask of bg regions in resized_char 
@@ -55,7 +57,8 @@ cv::Mat Renderer::getBackgroundMask(Mat foreground_mask, Rect roi) {
 	Mat foreground_mask_roi = foreground_mask(roi);
 
 	Mat bg_mask;
-	bitwise_not(foreground_mask_roi, bg_mask);
+	// bitwise_not(foreground_mask_roi, bg_mask);
 
-	return bg_mask;
+	// return bg_mask;
+	return foreground_mask_roi;
 }
