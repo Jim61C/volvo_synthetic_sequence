@@ -13,7 +13,6 @@ cv::Mat Renderer::loadCharacter(string character_file) {
 }
 
 void Renderer::overlayCharacter(Mat &bg, Mat character, Mat bounding_box, Mat fgbg) {
-	// TODO: use background mask, and bitwise_and, bitwise_not to have occulusion effect
 
 	int bottom_mid_x = bounding_box.at<int>(0, 0) + bounding_box.at<int>(0, 2)/2;
 	int bootom_mid_y = bounding_box.at<int>(0, 1) + bounding_box.at<int>(0, 3);
@@ -27,12 +26,24 @@ void Renderer::overlayCharacter(Mat &bg, Mat character, Mat bounding_box, Mat fg
 	Rect roi = Rect(bottom_mid_x - target_width/2, bootom_mid_y - target_height, target_width, target_height);
 	Mat bg_roi = bg(roi);
 
-	// create an inverse background mask (bg will be dark and target will be white) from fgbg for current frame
+	float center_portion = 0.5;
+	Rect centre_roi = Rect(bottom_mid_x - int(target_width * center_portion/2), bootom_mid_y - target_height, 
+		int(target_width * center_portion), target_height);
+
+	// create an inverse background mask of the centre area of the bounding box 
+	// (bg will be dark and target will be white) from fgbg for current frame
 	Mat bg_mask = getBackgroundMask(fgbg, roi);
 	Mat bg_mask_thresholded;
 	threshold(bg_mask, bg_mask_thresholded, 5, 255, cv::THRESH_BINARY);
 	imshow("bg_mask for this frame:", bg_mask_thresholded);
 	waitKey(0);
+
+	// TODO: use remove unconnected component to get smooth bg_mask_threshholded
+
+	Mat resized_char_occluded;  
+	bitwise_and(resized_char, resized_char, resized_char_occluded, bg_mask_thresholded);
+	imshow("bitwise_and with bg_mask:", resized_char_occluded);
+
 
 	// create a mask of bg regions in resized_char 
 	Mat resized_char_bw;
