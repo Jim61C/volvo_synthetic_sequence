@@ -27,6 +27,15 @@ public:
 
 	void load(DataManager & dm);
 	bool has_suffix(const string& s, const string& suffix);
+
+	/**
+	OTB format should contain image files in directory/img
+	*/
 	void loadOTB(DataManager& dm, string directory, int begin_frame, int end_frame, int step);
+
+	/**
+	Bouding boxes file needs to be at directory/result_rect*.txt
+	with format of [x y w h] per line
+	*/
 	void loadBoundingBoxes(DataManager & dm);
 };

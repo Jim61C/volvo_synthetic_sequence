@@ -1,8 +1,8 @@
 #include <iostream>
-#include "DataManager.h"
-#include "FrameLoader.h"
-#include "BgSubtractor.h"
-#include "Renderer.h"
+#include "./Rendering/DataManager.h"
+#include "./Rendering/FrameLoader.h"
+#include "./Rendering/BgSubtractor.h"
+#include "./Rendering/Renderer.h"
 #include <string.h>
 
 using namespace std;
@@ -24,9 +24,9 @@ int main(int argc, char **argv)
     // }
 
     // input path 
+    string data_source = "OTB";
     string input_dir = "../data/Walking";
     string char_dir = "../data/chars";
-    string data_source = "OTB";
 
     BgSubtractor subtractor;
     Renderer renderer(char_dir);
