@@ -31,3 +31,6 @@
 # ignore build and data
 data/
 build/
+
+# vscode
+.vscode/
