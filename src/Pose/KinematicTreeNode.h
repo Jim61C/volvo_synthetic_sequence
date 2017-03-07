@@ -8,6 +8,7 @@ public:
     string name;
     vector<KinematicTreeNode *> children;
 
+    KinematicTreeNode();
     KinematicTreeNode(double r);
     KinematicTreeNode(double r, string name);
 };

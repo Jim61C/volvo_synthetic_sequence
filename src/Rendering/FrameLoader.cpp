@@ -91,8 +91,22 @@ void FrameLoader::load(DataManager & dm) {
 		loadOTB(dm, this->directory+"/img", this->begin_frame, this->end_frame, this->step);
 	}
 
-    // load bounding boxes
-    loadBoundingBoxes(dm);
+    if (this->ground_truth_rect_name.compare("none") != 0) {
+        // directly load from the given ground_truth_rect_nams
+        string bounding_box_dir = this->directory;
+        if (bounding_box_dir.back() != '/') {
+            bounding_box_dir += '/';
+        }
+        Mat rects;
+        loadOneRawTxtFile(bounding_box_dir + this->ground_truth_rect_name, rects);
+
+        // TODO: check against dm.frames.size() and make sure they are consistent
+        dm.boxes.push_back(rects);
+    }
+    else {
+        // load bounding boxes by looking at *result*.txt
+        loadBoundingBoxes(dm);
+    }
 }
 
 
