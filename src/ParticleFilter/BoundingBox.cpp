@@ -61,7 +61,7 @@ void BoundingBox::calBoundingBoxNewScale  (double s, BoundingBox &box) {
     double new_h = this->h * s;
 
     double new_x = centre_x - 0.5 * new_w;
-    double new_y = centre_y - 0.5 * new_y;
+    double new_y = centre_y - 0.5 * new_h;
 
     return box.setBoxCoordinate((int)(new_x), (int)(new_y), (int)(new_w), (int)(new_h));
 }

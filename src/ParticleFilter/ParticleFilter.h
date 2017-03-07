@@ -11,11 +11,14 @@
 #define TRANS_Y_STD 1.0
 #define TRANS_S_STD 0.001
 
-#define INITIAL_SAMPLE_RANGE 10.0
+#define INITIAL_SAMPLE_RANGE 5.0
+#define DELTA_T 1.0
 #define GAUSSIAN_MULTIPLIER 1.0
 
 #define SCALE_VARIANCE 1.1
 #define SCALE_LEVEL 2 // -2, -1, 0, 1, 2
+
+#define TEMPLATE_UPDATE_SIMILARITY_TH 0.9
 
 class ParticleFilter {
 public:
@@ -61,7 +64,7 @@ public:
     // feature computation
     static MatND computeColorHistogram(BoundingBox & b, Mat & frame);
     // likelihood computation
-    static double computeLikelihood(MatND & this_hist, MatND & tempalte_hist, Mat & frame);
+    static double computeLikelihood(MatND & this_hist, MatND & tempalte_hist);
 
 };
 
