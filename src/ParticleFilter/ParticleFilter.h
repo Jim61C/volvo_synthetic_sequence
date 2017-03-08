@@ -10,15 +10,16 @@
 #define TRANS_X_STD 0.5
 #define TRANS_Y_STD 1.0
 #define TRANS_S_STD 0.001
+#define HIST_DIST_LIKELI_STD 2/6.0
 
 #define INITIAL_SAMPLE_RANGE 5.0
 #define DELTA_T 1.0
-#define GAUSSIAN_MULTIPLIER 4.0
+#define GAUSSIAN_MULTIPLIER 5.0
 
 #define SCALE_VARIANCE 1.0
 #define SCALE_LEVEL 2 // -2, -1, 0, 1, 2
 
-#define TEMPLATE_UPDATE_SIMILARITY_TH 0.0
+#define TEMPLATE_UPDATE_SIMILARITY_TH 0.3
 
 class ParticleFilter {
 public:

@@ -109,6 +109,7 @@ double ParticleFilter::updateLikelihood(Particle & p, Particle & template_roi, M
             cout << "this_box: " << this_box.x << ", " << this_box.y << ", " << this_box.w << ", " << this_box.h << endl;
 #endif
             MatND this_hist = ParticleFilter::computeColorHistogram(this_box, frame);
+            cout << "returned hist: " << sum(this_hist) << endl;
             double this_likeli = ParticleFilter::computeLikelihood(this_hist, template_hist);
             // TODO: penalise large BoundingBox Difference
             if (this_likeli > best_likeli) {
@@ -325,11 +326,30 @@ MatND ParticleFilter::computeColorHistogram(BoundingBox & b, Mat & frame) {
 
     MatND hist;
     calcHist( &frame_hsv, 1, channels, Mat(), hist, 2, histSize, ranges, true, false );
-    // normalize( hist, hist, 0, 1, NORM_MINMAX, -1, Mat() );
+    // hist.convertTo(hist, CV_64F); // make sure is float
+    cout << "in calcHist :" << sum(hist) << endl;
+    // normalize( hist, hist, 0, 1, NORM_MINMAX, -1, Mat() ); // do not normlise if want to factor in scale difference (number of pixel counts)
+    normalize(hist, hist, 1, 0, NORM_L1);
+    cout << "in calcHist after normalisation:" << sum(hist) << endl;
     return hist;
 }
 
-double ParticleFilter::computeLikelihood(MatND & this_hist, MatND & tempalte_hist) {
-    double distance = compareHist( this_hist, tempalte_hist, CV_COMP_BHATTACHARYYA ); // CV_COMP_BHATTACHARYYA is actual distance, the lower better, between 0 and 1
-    return 1.0 - distance;
+double ParticleFilter::computeLikelihood(MatND & this_hist, MatND & template_hist) {
+    // cout << "this_hist:" << sum(this_hist) << endl;
+    // cout << "template_hist:" << sum(template_hist) << endl;
+    double distance = compareHist( this_hist, template_hist, CV_COMP_BHATTACHARYYA ); // CV_COMP_BHATTACHARYYA is actual distance, the lower better, between 0 and 1
+    double density = gsl_ran_gaussian_pdf (distance, HIST_DIST_LIKELI_STD);
+    cout << "distance :" << distance << ", " << "density: " << density << endl;
+    // Mat draw;
+    // // distanceTransform(img,draw,CV_DIST_L2,5);
+
+    // // // back from float to uchar, needs a heuristic scale factor here (10 works nice for the demo)
+    // this_hist.convertTo(draw,CV_8U,10);    
+    // // // cerr << draw(Rect(30,30,10,10)) << endl; // peek into the data, does it look good ?
+
+    // applyColorMap(draw, draw, cv::COLORMAP_JET);
+
+    // imshow("this_hist",draw);
+    // waitKey(0);
+    return density;
 }
