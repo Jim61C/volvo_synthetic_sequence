@@ -329,7 +329,7 @@ MatND ParticleFilter::computeColorHistogram(BoundingBox & b, Mat & frame) {
     // hist.convertTo(hist, CV_64F); // make sure is float
     cout << "in calcHist :" << sum(hist) << endl;
     // normalize( hist, hist, 0, 1, NORM_MINMAX, -1, Mat() ); // do not normlise if want to factor in scale difference (number of pixel counts)
-    normalize(hist, hist, 1, 0, NORM_L1);
+    // normalize(hist, hist, 1, 0, NORM_L1);
     cout << "in calcHist after normalisation:" << sum(hist) << endl;
     return hist;
 }

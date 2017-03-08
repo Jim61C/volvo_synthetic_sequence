@@ -32,7 +32,7 @@
         // motion model
         this->pf.transition(cur_frame.size().width, cur_frame.size().height);
 
-        //draw resampled particles
+        //draw moved particles
         this->pf.DrawParticles(cur_frame);
         imshow("frame", cur_frame);
         waitKey(0);
@@ -47,7 +47,7 @@
         // resample
         this->pf.resampleParticles();
 
-        //draw resampled particles
+        //draw resampled particles, TODO: draw different color based on weights
         this->pf.DrawParticles(cur_frame);
 
         // draw estimate
