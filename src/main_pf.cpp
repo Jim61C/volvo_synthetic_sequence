@@ -9,6 +9,7 @@ int main(int argc, char **argv) {
     // input path 
     string data_source = "OTB";
     string input_dir = "../data/Walking";
+    // string input_dir = "../data/Surfer";
     string ground_truth_rect_name = "groundtruth_rect.txt";
     // string char_dir = "../data/chars";
 

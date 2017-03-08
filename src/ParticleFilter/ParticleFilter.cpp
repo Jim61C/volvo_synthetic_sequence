@@ -1,6 +1,8 @@
 #include "ParticleFilter.h"
 #include <math.h> 
 
+#define DEBUG_BOUNDINGBOX_BOUNDARY
+
 ParticleFilter::ParticleFilter() {
     this->N_particles = 100;
     gsl_rng_env_setup();
@@ -70,7 +72,7 @@ void ParticleFilter::transition(int W, int H) {
 // note  template_roi.color_feature should be precalculated!!!
 double ParticleFilter::updateLikelihood(Particle & p, Particle & template_roi, Mat & frame) {
     double best_likeli = 0.0;
-    double best_s = -1;
+    double best_s = 1.0;
     MatND best_hist;
     
     // MatND template_hist = ParticleFilter::computeColorHistogram(template_roi.roi, frame);
@@ -84,6 +86,7 @@ double ParticleFilter::updateLikelihood(Particle & p, Particle & template_roi, M
     
     for (int i = -SCALE_LEVEL;i<= SCALE_LEVEL;i++) {
         double this_s = pow(SCALE_VARIANCE, i) * 1.0;
+        cout << "this_s:" << endl;
 
         // cout << "centre_x:" << centre_x << ", centre_y" << centre_y << endl;
 
@@ -93,14 +96,18 @@ double ParticleFilter::updateLikelihood(Particle & p, Particle & template_roi, M
         (int)(centre_y + 0.5 * p.roi.h * this_s) < frame.size().height &&
         (int)(centre_y - 0.5 * p.roi.h * this_s) >= 0 
         ) {
-            // cout << "boundaries:" << (int)(centre_x + 0.5 * p.roi.w * this_s) << ", "
-            // << (int)(centre_x - 0.5 * p.roi.w * this_s) << ", "
-            // <<  (int)(centre_y + 0.5 * p.roi.h * this_s) << ", "
-            // <<  (int)(centre_y - 0.5 * p.roi.h * this_s) << endl;
+#ifdef DEBUG_BOUNDINGBOX_BOUNDARY
+            cout << "boundaries:" << (int)(centre_x + 0.5 * p.roi.w * this_s) << ", "
+            << (int)(centre_x - 0.5 * p.roi.w * this_s) << ", "
+            <<  (int)(centre_y + 0.5 * p.roi.h * this_s) << ", "
+            <<  (int)(centre_y - 0.5 * p.roi.h * this_s) << endl;
             BoundingBox this_box;
+#endif
             p.roi.calBoundingBoxNewScale (this_s, this_box);
-            // cout << "this_box: " << this_box.x << ", " << this_box.y << ", " << this_box.w << ", " << this_box.h << endl;
 
+#ifdef DEBUG_BOUNDINGBOX_BOUNDARY
+            cout << "this_box: " << this_box.x << ", " << this_box.y << ", " << this_box.w << ", " << this_box.h << endl;
+#endif
             MatND this_hist = ParticleFilter::computeColorHistogram(this_box, frame);
             double this_likeli = ParticleFilter::computeLikelihood(this_hist, template_hist);
             // TODO: penalise large BoundingBox Difference
@@ -112,6 +119,7 @@ double ParticleFilter::updateLikelihood(Particle & p, Particle & template_roi, M
         }
     }
 
+    cout << "best_likeli:" << best_likeli << endl;
     p.w = best_likeli;
     p.s = best_s;
     p.color_feature = best_hist;
@@ -134,8 +142,17 @@ void ParticleFilter::normalizeLikelihood() {
         sum += this->particles[i].w;
     }
 
-    for (int i = 0;i < this->particles.size();i++) {
-        this->particles[i].w /= sum;
+    if (sum == 0) {
+        // all particles are having weights zero, all of them are going out of boundary, failure case
+        cout << "Failure: All particles are going out of boundary!" << endl;
+        for (int i = 0;i < this->particles.size();i++) {
+            this->particles[i].w = 1/this->N_particles;
+        }
+    }
+    else {
+        for (int i = 0;i < this->particles.size();i++) {
+            this->particles[i].w /= sum;
+        }
     }
 }
 // invoke observation model for all particles
@@ -169,6 +186,7 @@ void ParticleFilter::updateCurrentROI(Mat & frame) {
         h_bar += this_p.roi.h * this_p.w;
         u_bar += this_p.u * this_p.w;
         v_bar += this_p.v * this_p.w;
+        cout << "particle[" << i << "].w: " << this_p.w << endl; 
     }
 
     this->current_roi.u = u_bar;
@@ -257,7 +275,8 @@ void ParticleFilter::resampleParticles() {
     
     // if not enough, copy the particle having heighest weight (TODO: might need to change this)
     while (new_particles.size() < this->N_particles) {
-        new_particles.push_back(this->particles[0]);
+        // new_particles.push_back(this->particles[0]);
+        new_particles.push_back(this->current_roi); // push the MMSE estimate
     }
 
     // reassign back
@@ -280,9 +299,10 @@ Helper functions
 // feature computation
 MatND ParticleFilter::computeColorHistogram(BoundingBox & b, Mat & frame) {
     // TODO: if frame is one channel (BW), then use intensity histogram instead
-    // cout << "roi: \n" << b.x << "," << b.y << ", " << b.w << ", " << b.h << endl;
-    // cout << "frame W and H:" << frame.size().width  << ", " << frame.size().height << endl;
-
+#ifdef DEBUG_BOUNDINGBOX_BOUNDARY
+    cout << "roi: \n" << b.x << "," << b.y << ", " << b.w << ", " << b.h << endl;
+    cout << "frame W and H:" << frame.size().width  << ", " << frame.size().height << endl;
+#endif
     Rect roi = Rect(b.x, b.y, b.w, b.h);
 	Mat frame_roi = frame(roi);
     Mat frame_hsv;
@@ -305,7 +325,7 @@ MatND ParticleFilter::computeColorHistogram(BoundingBox & b, Mat & frame) {
 
     MatND hist;
     calcHist( &frame_hsv, 1, channels, Mat(), hist, 2, histSize, ranges, true, false );
-    normalize( hist, hist, 0, 1, NORM_MINMAX, -1, Mat() );
+    // normalize( hist, hist, 0, 1, NORM_MINMAX, -1, Mat() );
     return hist;
 }
 

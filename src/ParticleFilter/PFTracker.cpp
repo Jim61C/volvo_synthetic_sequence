@@ -23,6 +23,11 @@
     // start procedure
     for (int i = 1;i< dm.frames.size(); i++) {
         Mat cur_frame = dm.frames[i];
+        
+        // before transition
+        this->pf.DrawParticles(cur_frame);
+        imshow("frame", cur_frame);
+        waitKey(0);
 
         // motion model
         this->pf.transition(cur_frame.size().width, cur_frame.size().height);
