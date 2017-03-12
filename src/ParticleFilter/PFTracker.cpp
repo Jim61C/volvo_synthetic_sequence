@@ -1,6 +1,6 @@
  #include "PFTracker.h"
  
- void PFTracker::start(DataManager & dm) {
+ void PFTracker::start(DataManager & dm, VideoWriter & writer) {
     cout << "single tracking boxes.shape:" << dm.boxes[0].rows << ", " << dm.boxes[0].cols << endl;
     this->initial_box.setBox(dm.boxes[0].colRange(0, 4).rowRange(0,1));
 
@@ -18,7 +18,12 @@
     this->initial_box.DrawBoundingBox(frame_0);
     this->pf.DrawParticles(frame_0);
     imshow("frame", frame_0);
-    waitKey(0);
+    waitKey(WAIT_KEY_NUM_MILLISECONDS);
+
+    // write first frame if writer is open
+    if (writer.isOpened()) {
+        writer << frame_0;
+    }
 
     // start procedure
     for (int i = 1;i< dm.frames.size(); i++) {
@@ -29,7 +34,7 @@
         Mat cur_frame_to_display = cur_frame.clone();
         this->pf.DrawParticles(cur_frame_to_display);
         imshow("frame", cur_frame_to_display);
-        waitKey(0);
+        waitKey(WAIT_KEY_NUM_MILLISECONDS);
 
         // motion model
         this->pf.transition(cur_frame.size().width, cur_frame.size().height);
@@ -39,7 +44,7 @@
         cur_frame_to_display = cur_frame.clone();
         this->pf.DrawParticles(cur_frame_to_display);
         imshow("frame", cur_frame_to_display);
-        waitKey(0);
+        waitKey(WAIT_KEY_NUM_MILLISECONDS);
         
 
         // observation model
@@ -51,7 +56,7 @@
         cur_frame_to_display = cur_frame.clone();
         this->pf.DrawParticles(cur_frame_to_display);
         imshow("frame", cur_frame_to_display);
-        waitKey(0);
+        waitKey(WAIT_KEY_NUM_MILLISECONDS);
 
         // posterior
         this->pf.updateCurrentROI(cur_frame);
@@ -74,6 +79,12 @@
         
         // visualise
         imshow("frame", cur_frame_to_display);
-        waitKey(0);
+        waitKey(WAIT_KEY_NUM_MILLISECONDS);
+
+        // write cur frame if writer is open
+        if (writer.isOpened()) {
+            writer << cur_frame_to_display;
+        }
+
     }
  }

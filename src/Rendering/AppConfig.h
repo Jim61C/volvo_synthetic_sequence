@@ -4,6 +4,7 @@ struct AppConfig {
     char * input_dir;
     char * ground_truth_rect_path;
     char * data_source;
+    char * output_path;
     bool verbose;
 
     AppConfig() {
@@ -11,6 +12,7 @@ struct AppConfig {
         this->input_dir = NULL;
         this->ground_truth_rect_path = NULL;
         this->data_source = NULL;    
+        this->output_path = NULL;
     }
 
 };
