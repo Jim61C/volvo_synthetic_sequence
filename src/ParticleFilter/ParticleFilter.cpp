@@ -205,10 +205,14 @@ void ParticleFilter::updateCurrentROI(Mat & frame) {
     this->current_roi.u = u_bar;
     this->current_roi.v = v_bar;
 
-    this->current_roi.roi.setBoxCoordinate((int)(x_bar), (int)(y_bar), (int)(w_bar), (int)(h_bar));
+    this->current_roi.roi.setBoxCoordinate((int)(x_bar), (int)(y_bar), (int)(round(w_bar)), (int)(round(h_bar)));
     this->current_roi.s = 1.0; // since s already falled back for all particles
     this->current_roi.w = 1.0/this->particles.size(); // avoid current roi's weights to be 1
-    
+#ifdef DEBUG_BBOX_SIZE
+    cout << "w_origin:" << w_origin << ", w_new:" << this->current_roi.roi.w << endl;
+    cout << "h_origin:" << h_origin << ", h_new:" << this->current_roi.roi.h << endl;
+#endif
+
     // // naive, always update template_roi, 
     // this->template_roi.u = u_bar;
     // this->template_roi.v = v_bar;
