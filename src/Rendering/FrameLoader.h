@@ -9,7 +9,7 @@ class FrameLoader {
 private:
 	string directory;
 	string data_source;
-	string ground_truth_rect_name;
+	string ground_truth_rect_path;
 	int begin_frame;
 	int end_frame;
 	int step;
@@ -17,18 +17,18 @@ private:
 public:
 	FrameLoader(string input_dir, 
 		string data_source, 
-		string ground_truth_rect_name,
+		string ground_truth_rect_path,
 		int begin_frame, 
 		int end_frame, 
 		int step):
 	directory(input_dir), 
 	data_source(data_source), 
-	ground_truth_rect_name(ground_truth_rect_name),
+	ground_truth_rect_path(ground_truth_rect_path),
 	begin_frame(begin_frame), 
 	end_frame(end_frame), 
 	step(step) {}
 
-	/*if ground_truth_rect_name is unknown*/
+	/*if ground_truth_rect_path is unknown*/
 	FrameLoader(string input_dir, 
 		string data_source, 
 		int begin_frame, 
@@ -36,7 +36,7 @@ public:
 		int step):
 	directory(input_dir), 
 	data_source(data_source), 
-	ground_truth_rect_name("none"),
+	ground_truth_rect_path("none"),
 	begin_frame(begin_frame), 
 	end_frame(end_frame), 
 	step(step) {}
