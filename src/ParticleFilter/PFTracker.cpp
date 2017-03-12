@@ -25,21 +25,33 @@
         Mat cur_frame = dm.frames[i];
         
         // before transition
-        this->pf.DrawParticles(cur_frame);
-        imshow("frame", cur_frame);
+        cout << "before particle transition" << endl;
+        Mat cur_frame_to_display = cur_frame.clone();
+        this->pf.DrawParticles(cur_frame_to_display);
+        imshow("frame", cur_frame_to_display);
         waitKey(0);
 
         // motion model
         this->pf.transition(cur_frame.size().width, cur_frame.size().height);
 
         //draw moved particles
-        this->pf.DrawParticles(cur_frame);
-        imshow("frame", cur_frame);
+        cout << "draw moved particles" << endl;
+        cur_frame_to_display = cur_frame.clone();
+        this->pf.DrawParticles(cur_frame_to_display);
+        imshow("frame", cur_frame_to_display);
         waitKey(0);
         
 
         // observation model
         this->pf.updateWeights(cur_frame);
+
+
+        //draw particles with their weigts indicating colors
+        cout << "after weights, draw particles with colors indicating weights" << endl;
+        cur_frame_to_display = cur_frame.clone();
+        this->pf.DrawParticles(cur_frame_to_display);
+        imshow("frame", cur_frame_to_display);
+        waitKey(0);
 
         // posterior
         this->pf.updateCurrentROI(cur_frame);
@@ -47,19 +59,21 @@
         // resample
         this->pf.resampleParticles();
 
-        //draw resampled particles, TODO: draw different color based on weights
-        this->pf.DrawParticles(cur_frame);
+        //draw resampled particles, 
+        cout << "after resampling of particles " << endl;
+        cur_frame_to_display = cur_frame.clone();
+        this->pf.DrawParticles(cur_frame_to_display);
 
         // draw estimate
-        this->pf.current_roi.roi.Draw(0, 255, 0, cur_frame);
+        this->pf.current_roi.roi.Draw(0, 255, 0, cur_frame_to_display);
 
         // draw gt
         BoundingBox cur_gt;
         cur_gt.setBox(dm.boxes[0].colRange(0, 4).rowRange(i,i+1));
-        cur_gt.DrawBoundingBox(cur_frame);
+        cur_gt.DrawBoundingBox(cur_frame_to_display);
         
         // visualise
-        imshow("frame", cur_frame);
+        imshow("frame", cur_frame_to_display);
         waitKey(0);
     }
  }

@@ -1,7 +1,9 @@
 #include "ParticleFilter.h"
-#include <math.h> 
+#include <math.h>
+#include <assert.h>  
 
-#define DEBUG_BOUNDINGBOX_BOUNDARY
+// #define DEBUG_BOUNDINGBOX_BOUNDARY
+#define DEBUG_BBOX_SIZE
 
 ParticleFilter::ParticleFilter() {
     this->N_particles = 100;
@@ -86,7 +88,7 @@ double ParticleFilter::updateLikelihood(Particle & p, Particle & template_roi, M
     
     for (int i = -SCALE_LEVEL;i<= SCALE_LEVEL;i++) {
         double this_s = pow(SCALE_VARIANCE, i) * 1.0;
-        cout << "this_s:" << endl;
+        cout << "this_s:"<< this_s << endl;
 
         // cout << "centre_x:" << centre_x << ", centre_y" << centre_y << endl;
 
@@ -101,8 +103,8 @@ double ParticleFilter::updateLikelihood(Particle & p, Particle & template_roi, M
             << (int)(centre_x - 0.5 * p.roi.w * this_s) << ", "
             <<  (int)(centre_y + 0.5 * p.roi.h * this_s) << ", "
             <<  (int)(centre_y - 0.5 * p.roi.h * this_s) << endl;
-            BoundingBox this_box;
 #endif
+            BoundingBox this_box;
             p.roi.calBoundingBoxNewScale (this_s, this_box);
 
 #ifdef DEBUG_BOUNDINGBOX_BOUNDARY
@@ -120,6 +122,13 @@ double ParticleFilter::updateLikelihood(Particle & p, Particle & template_roi, M
         }
     }
 
+#ifdef DEBUG_BBOX_SIZE
+    if (best_likeli == 0) {
+        cout << "All sizes of this box go out of boundary" << endl;
+    }
+    assert (best_s == 1.0);
+
+#endif
     cout << "best_likeli:" << best_likeli << endl;
     p.w = best_likeli;
     p.s = best_s;
@@ -147,7 +156,7 @@ void ParticleFilter::normalizeLikelihood() {
         // all particles are having weights zero, all of them are going out of boundary, failure case
         cout << "Failure: All particles are going out of boundary!" << endl;
         for (int i = 0;i < this->particles.size();i++) {
-            this->particles[i].w = 1/this->N_particles;
+            this->particles[i].w = 1.0/this->particles.size();
         }
     }
     else {
@@ -171,6 +180,9 @@ void ParticleFilter::updateWeights(Mat & frame) {
 
 // posterior, get weighted average of all particles, simple model always update, expect drift
 void ParticleFilter::updateCurrentROI(Mat & frame) {
+    int w_origin = this->current_roi.roi.w;
+    int h_origin = this->current_roi.roi.h;
+
     // MMSE
     double x_bar = 0;
     double y_bar = 0;
@@ -187,7 +199,7 @@ void ParticleFilter::updateCurrentROI(Mat & frame) {
         h_bar += this_p.roi.h * this_p.w;
         u_bar += this_p.u * this_p.w;
         v_bar += this_p.v * this_p.w;
-        cout << "particle[" << i << "].w: " << this_p.w << endl; 
+        // cout << "particle[" << i << "].w: " << this_p.w << endl; 
     }
 
     this->current_roi.u = u_bar;
@@ -195,6 +207,7 @@ void ParticleFilter::updateCurrentROI(Mat & frame) {
 
     this->current_roi.roi.setBoxCoordinate((int)(x_bar), (int)(y_bar), (int)(w_bar), (int)(h_bar));
     this->current_roi.s = 1.0; // since s already falled back for all particles
+    this->current_roi.w = 1.0/this->particles.size(); // avoid current roi's weights to be 1
     
     // // naive, always update template_roi, 
     // this->template_roi.u = u_bar;
@@ -276,8 +289,8 @@ void ParticleFilter::resampleParticles() {
     
     // if not enough, copy the particle having heighest weight (TODO: might need to change this)
     while (new_particles.size() < this->N_particles) {
-        // new_particles.push_back(this->particles[0]);
-        new_particles.push_back(this->current_roi); // push the MMSE estimate
+        new_particles.push_back(this->particles[0]);
+        // new_particles.push_back(this->current_roi); // push the MMSE estimate
     }
 
     // reassign back
@@ -289,8 +302,32 @@ void ParticleFilter::resampleParticles() {
 
 
 void ParticleFilter::DrawParticles(Mat & frame) {
-    for (int i =0;i<this->particles.size();i++) {
-        this->particles[i].roi.Draw(255, 0, 0, frame); // particles shown in red 
+    double max_w = 0;
+    double min_w = 1.0;
+
+    for (int i =0;i< this->particles.size(); i++) {
+        if (this->particles[i].w > max_w) {
+            max_w = this->particles[i].w;
+        }
+        if (this->particles[i].w < min_w) {
+            min_w = this->particles[i].w;
+        }
+    }
+
+    int min_w_color = 60;
+    int max_w_color = 255;
+    cout << "min_w:" << min_w << ", max_w:" << max_w << endl;
+
+    if (min_w == max_w) {
+        for (int i =0;i<this->particles.size();i++) {
+            this->particles[i].roi.Draw(255, 255, 255, frame); // particles shown in red 
+        }    
+    }
+    else {
+        for (int i =0;i<this->particles.size();i++) {
+            int this_color = (int)((this->particles[i].w - min_w)/(max_w - min_w) * (max_w_color - min_w_color) + min_w_color);
+            this->particles[i].roi.Draw(0, 0, this_color, frame); // particles shown in red 
+        }
     }
 }
 
@@ -326,7 +363,7 @@ MatND ParticleFilter::computeColorHistogram(BoundingBox & b, Mat & frame) {
 
     MatND hist;
     calcHist( &frame_hsv, 1, channels, Mat(), hist, 2, histSize, ranges, true, false );
-    // hist.convertTo(hist, CV_64F); // make sure is float
+    hist.convertTo(hist, CV_32F); // make sure is float
     cout << "in calcHist :" << sum(hist) << endl;
     // normalize( hist, hist, 0, 1, NORM_MINMAX, -1, Mat() ); // do not normlise if want to factor in scale difference (number of pixel counts)
     // normalize(hist, hist, 1, 0, NORM_L1);
