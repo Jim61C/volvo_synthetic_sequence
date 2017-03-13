@@ -20,11 +20,21 @@ void inOrderWalk(KinematicTreeNode * node_ptr, vector<double> & results) {
     }
 }
 
-vector<double> PoseRepre::getKinematicFeatureRepre() {
+vector<double> PoseRepre::getThisKinematicFeatureRepre() {
     // do an inorder walk
     vector<double> results;
     inOrderWalk(this->root_ptr, results);
     return results;
+}
+
+vector<double> PoseRepre::getKinematicFeatureRepreGivenNode(KinematicTreeNode * node) {
+    vector<double> results;
+    inOrderWalk(node, results);
+    return results;
+}
+
+void PoseRepre::deformPoseRandom(KinematicTreeNode * node) {
+    // TODO: deform randomly along the kinematic tree
 }
 
 KinematicTreeNode* PoseRepre::constructKinematicTreeMannual(vector<Joint> joints) {

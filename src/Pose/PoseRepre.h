@@ -15,10 +15,14 @@ public:
     /**
     Get the feature representation of this tree, here, I use a pre-order walk from the root
     */
-    vector<double> getKinematicFeatureRepre();
+    vector<double> getThisKinematicFeatureRepre();
+
+    static vector<double> getKinematicFeatureRepreGivenNode(KinematicTreeNode * node);
+
+    static void deformPoseRandom(KinematicTreeNode * node);
 
     /**
-    Construct kinematic tree represetation given a vector of joints
+    Construct kinematic tree represetation given a vector of joints, returns the root
     */
     static KinematicTreeNode* constructKinematicTreeMannual(vector<Joint> joints);
 
