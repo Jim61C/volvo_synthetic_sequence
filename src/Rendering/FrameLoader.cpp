@@ -37,9 +37,9 @@ void loadOneRawTxtFile(string txt_path, Mat & target) {
     string token;
     char *delimiter = NULL; // next_line is expected to be space delimited
 
-    int x, y, w, h;
+    double x, y, w, h;
     int num_frames = countNumberfLines(txt_path);
-    target = Mat::zeros(num_frames, 4, CV_32S);
+    target = Mat::zeros(num_frames, 4, CV_64F);
 
     int i = 0;
     while (!rect_stream.eof()) {
@@ -68,10 +68,10 @@ void loadOneRawTxtFile(string txt_path, Mat & target) {
             iss >> w;
             iss >> h;
 
-            target.at<int>(i, 0) = x;
-            target.at<int>(i, 1) = y;
-            target.at<int>(i, 2) = w;
-            target.at<int>(i, 3) = h;
+            target.at<double>(i, 0) = x;
+            target.at<double>(i, 1) = y;
+            target.at<double>(i, 2) = w;
+            target.at<double>(i, 3) = h;
 
             i++;
         }

@@ -2,13 +2,13 @@
 
 // constructors
 BoundingBox::BoundingBox() {
-    this->x = 0;
-    this->y = 0;
-    this->w = 0;
-    this->h = 0;
+    this->x = 0.0;
+    this->y = 0.0;
+    this->w = 0.0;
+    this->h = 0.0;
 }
 
-BoundingBox::BoundingBox(int x, int y, int w, int h) {
+BoundingBox::BoundingBox(double x, double y, double w, double h) {
     this->x = x;
     this->y = y;
     this->w = w;
@@ -16,7 +16,7 @@ BoundingBox::BoundingBox(int x, int y, int w, int h) {
 }
 
 
-void BoundingBox::setBoxCoordinate(int x, int y, int w, int h) {
+void BoundingBox::setBoxCoordinate(double x, double y, double w, double h) {
     this->x = x;
     this->y = y;
     this->w = w;
@@ -24,10 +24,11 @@ void BoundingBox::setBoxCoordinate(int x, int y, int w, int h) {
 }
 
 void BoundingBox::setBox(Mat rect) {
-    this->x = rect.at<int>(0, 0);
-    this->y= rect.at<int>(0, 1);
-    this->w = rect.at<int>(0, 2);
-    this->h = rect.at<int>(0, 3);
+    cout << rect<< endl;
+    this->x = rect.at<double>(0, 0);
+    this->y= rect.at<double>(0, 1);
+    this->w = rect.at<double>(0, 2);
+    this->h = rect.at<double>(0, 3);
 }
 
 void BoundingBox::setAsBox(BoundingBox & b) {
@@ -39,7 +40,13 @@ void BoundingBox::setAsBox(BoundingBox & b) {
 
 // Draw a rectangle corresponding to this bbox with the given color.
 void BoundingBox::Draw(const int r, const int g, const int b, cv::Mat & image, const int thickness) {
-    Rect rect = Rect(this->x, this->y, this->w, this->h);
+    // get the top left point.
+    Point point1(this->x, this->y);
+
+    // get the bottom right point.
+    Point point2(this->x + this->w, this->y + this->h);
+
+    Rect rect = Rect(point1, point2);
     const cv::Scalar box_color(b, g, r);
 
     // if BW, convet to BGR to show colored BBox
@@ -67,16 +74,16 @@ void BoundingBox::calBoundingBoxNewScale  (double s, BoundingBox &box) {
     double new_x = centre_x - 0.5 * new_w;
     double new_y = centre_y - 0.5 * new_h;
 
-    return box.setBoxCoordinate((int)(round(new_x)), (int)(round(new_y)), (int)(round(new_w)), (int)(round(new_h)));
+    return box.setBoxCoordinate(new_x, new_y, new_w, new_h);
 }
 
 
 // get bounding box center
-pair<int, int> BoundingBox::getBoundingBoxCenter() {
-    pair <int,int> centre;
+pair<double, double> BoundingBox::getBoundingBoxCenter() {
+    pair <double, double> centre;
 
-    centre.first = (int)(round(this->x + this->w /2.0));
-    centre.second = (int)(round(this->y + this->h /2.0));
+    centre.first = this->x + this->w /2.0;
+    centre.second = this->y + this->h /2.0;
 
     return centre;
 }

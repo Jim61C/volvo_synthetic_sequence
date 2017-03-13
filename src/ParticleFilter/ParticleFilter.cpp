@@ -16,7 +16,7 @@ ParticleFilter::ParticleFilter() {
 void ParticleFilter::initParticles(Mat &frame, BoundingBox & initial_box) {
     while (this->particles.size() < this->N_particles) {
         // create particle
-        double dx_unit = (gsl_rng_uniform (this->rng) - 0.5);
+        double dx_unit = (gsl_rng_uniform (this->rng) - 0.5); // -0.5 to 0.5
         double dy_unit = (gsl_rng_uniform (this->rng) - 0.5);
         
         cout << "Particle ["<< this->particles.size() << "]" << "initial rand:" << dx_unit << ", " << dy_unit << endl;
@@ -46,14 +46,14 @@ void ParticleFilter::moveParticle(Particle & p, int W, int H) {
     if (new_x < 0) {
         new_x = 0.0;
     }
-    else if (new_x + p.roi.w >= W) {
+    else if (new_x + p.roi.w > W - 1) {
         new_x = W - p.roi.w -1.0;
     }
     
     if (new_y < 0) {
         new_y = 0;
     }
-    else if (new_y + p.roi.h >= H) {
+    else if (new_y + p.roi.h > H - 1) {
         new_y = H - p.roi.h - 1.0;
     }
 
@@ -95,9 +95,9 @@ double ParticleFilter::updateLikelihood(Particle & p, Particle & template_roi, M
         p.roi.calBoundingBoxNewScale (this_s, this_box);
         
         // make sure not out of boudary
-        if (this_box.x + this_box.w < frame.size().width &&
+        if (this_box.x + this_box.w <= frame.size().width - 1 &&
         this_box.x >= 0 && 
-        this_box.y + this_box.h < frame.size().height &&
+        this_box.y + this_box.h <= frame.size().height - 1 &&
         this_box.y >= 0 
         ) {
 #ifdef DEBUG_BOUNDINGBOX_BOUNDARY
@@ -180,8 +180,8 @@ void ParticleFilter::updateWeights(Mat & frame) {
 
 // posterior, get weighted average of all particles, simple model always update, expect drift
 void ParticleFilter::updateCurrentROI(Mat & frame) {
-    int w_origin = this->current_roi.roi.w;
-    int h_origin = this->current_roi.roi.h;
+    double w_origin = this->current_roi.roi.w;
+    double h_origin = this->current_roi.roi.h;
 
     // MMSE
     double x_bar = 0;
@@ -205,7 +205,7 @@ void ParticleFilter::updateCurrentROI(Mat & frame) {
     this->current_roi.u = u_bar;
     this->current_roi.v = v_bar;
 
-    this->current_roi.roi.setBoxCoordinate((int)(x_bar), (int)(y_bar), (int)(round(w_bar)), (int)(round(h_bar)));
+    this->current_roi.roi.setBoxCoordinate(x_bar, y_bar, w_bar, h_bar);
     this->current_roi.s = 1.0; // since s already falled back for all particles
     this->current_roi.w = 1.0/this->particles.size(); // avoid current roi's weights to be 1
 #ifdef DEBUG_BBOX_SIZE
@@ -230,7 +230,7 @@ void ParticleFilter::updateCurrentROI(Mat & frame) {
         this->template_roi.u = u_bar;
         this->template_roi.v = v_bar;
 
-        this->template_roi.roi.setBoxCoordinate((int)(x_bar), (int)(y_bar), (int)(w_bar), (int)(h_bar));
+        this->template_roi.roi.setBoxCoordinate(x_bar, y_bar, w_bar, h_bar);
         this->template_roi.s = 1.0; // since s already falled back for all particles
         this->template_roi.color_feature = estimate_color_feature;
     }
@@ -348,7 +348,7 @@ MatND ParticleFilter::computeColorHistogram(BoundingBox & b, Mat & frame) {
     // TODO: if frame is one channel (BW), then use intensity histogram instead
     if(frame.channels() == 1) {
         // do 1D histogram calculation
-        Rect roi = Rect(b.x, b.y, b.w, b.h);
+        Rect roi = Rect((int)(round(b.x)), (int)(round(b.y)), (int)(round(b.w)), (int)(round(b.h)));
         Mat frame_roi = frame(roi);
 
         int bins = 64;
@@ -362,7 +362,7 @@ MatND ParticleFilter::computeColorHistogram(BoundingBox & b, Mat & frame) {
         return hist;
     }
     else {
-        Rect roi = Rect(b.x, b.y, b.w, b.h);
+        Rect roi = Rect((int)(round(b.x)), (int)(round(b.y)), (int)(round(b.w)), (int)(round(b.h)));
         Mat frame_roi = frame(roi);
         Mat frame_hsv;
         cvtColor( frame_roi, frame_hsv, COLOR_BGR2HSV );

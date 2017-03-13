@@ -5,17 +5,17 @@
 
 class BoundingBox {
 public:
-    int x;
-    int y;
-    int w;
-    int h;
+    double x;
+    double y;
+    double w;
+    double h;
 
     // constructors
     BoundingBox();
 
-    BoundingBox(int x, int y, int w, int h);
+    BoundingBox(double x, double y, double w, double h);
 
-    void setBoxCoordinate(int x, int y, int w, int h);
+    void setBoxCoordinate(double x, double y, double w, double h);
 
     void setBox(Mat rect);
 
@@ -31,7 +31,7 @@ public:
     void calBoundingBoxNewScale (double s, BoundingBox &box);
 
     // get bounding box center
-    pair<int, int> getBoundingBoxCenter();
+    pair<double, double> getBoundingBoxCenter();
 };
 
 #endif
