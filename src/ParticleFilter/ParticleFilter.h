@@ -16,7 +16,7 @@
 #define DELTA_T 1.0
 #define GAUSSIAN_MULTIPLIER 5.0
 
-#define SCALE_VARIANCE 1.0
+#define SCALE_VARIANCE 1.05
 #define SCALE_LEVEL 2 // -2, -1, 0, 1, 2
 
 #define TEMPLATE_UPDATE_SIMILARITY_TH 0.0 // 0.0 never update template histogram

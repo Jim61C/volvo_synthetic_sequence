@@ -91,21 +91,21 @@ double ParticleFilter::updateLikelihood(Particle & p, Particle & template_roi, M
         cout << "this_s:"<< this_s << endl;
 
         // cout << "centre_x:" << centre_x << ", centre_y" << centre_y << endl;
-
+        BoundingBox this_box;
+        p.roi.calBoundingBoxNewScale (this_s, this_box);
+        
         // make sure not out of boudary
-        if ((int)(centre_x + 0.5 * p.roi.w * this_s) < frame.size().width &&
-        (int)(centre_x - 0.5 * p.roi.w * this_s) >= 0 && 
-        (int)(centre_y + 0.5 * p.roi.h * this_s) < frame.size().height &&
-        (int)(centre_y - 0.5 * p.roi.h * this_s) >= 0 
+        if (this_box.x + this_box.w < frame.size().width &&
+        this_box.x >= 0 && 
+        this_box.y + this_box.h < frame.size().height &&
+        this_box.y >= 0 
         ) {
 #ifdef DEBUG_BOUNDINGBOX_BOUNDARY
-            cout << "boundaries:" << (int)(centre_x + 0.5 * p.roi.w * this_s) << ", "
-            << (int)(centre_x - 0.5 * p.roi.w * this_s) << ", "
-            <<  (int)(centre_y + 0.5 * p.roi.h * this_s) << ", "
-            <<  (int)(centre_y - 0.5 * p.roi.h * this_s) << endl;
+            cout << "boundaries:" << this_box.x + this_box.w << ", "
+            << this_box.x << ", "
+            <<  this_box.y + this_box.h << ", "
+            <<  this_box.y << endl;
 #endif
-            BoundingBox this_box;
-            p.roi.calBoundingBoxNewScale (this_s, this_box);
 
 #ifdef DEBUG_BOUNDINGBOX_BOUNDARY
             cout << "this_box: " << this_box.x << ", " << this_box.y << ", " << this_box.w << ", " << this_box.h << endl;
@@ -126,7 +126,7 @@ double ParticleFilter::updateLikelihood(Particle & p, Particle & template_roi, M
     if (best_likeli == 0) {
         cout << "All sizes of this box go out of boundary" << endl;
     }
-    assert (best_s == 1.0);
+    // assert (best_s == 1.0);
 
 #endif
     cout << "best_likeli:" << best_likeli << endl;
