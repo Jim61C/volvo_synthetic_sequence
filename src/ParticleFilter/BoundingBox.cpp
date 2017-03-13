@@ -67,7 +67,7 @@ void BoundingBox::calBoundingBoxNewScale  (double s, BoundingBox &box) {
     double new_x = centre_x - 0.5 * new_w;
     double new_y = centre_y - 0.5 * new_h;
 
-    return box.setBoxCoordinate((int)(new_x), (int)(new_y), (int)(new_w), (int)(new_h));
+    return box.setBoxCoordinate((int)(round(new_x)), (int)(round(new_y)), (int)(round(new_w)), (int)(round(new_h)));
 }
 
 
@@ -75,8 +75,8 @@ void BoundingBox::calBoundingBoxNewScale  (double s, BoundingBox &box) {
 pair<int, int> BoundingBox::getBoundingBoxCenter() {
     pair <int,int> centre;
 
-    centre.first = (int)(this->x + this->w /2.0);
-    centre.second = (int)(this->y + this->h /2.0);
+    centre.first = (int)(round(this->x + this->w /2.0));
+    centre.second = (int)(round(this->y + this->h /2.0));
 
     return centre;
 }
