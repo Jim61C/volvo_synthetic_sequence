@@ -42,6 +42,10 @@ void BoundingBox::Draw(const int r, const int g, const int b, cv::Mat & image, c
     Rect rect = Rect(this->x, this->y, this->w, this->h);
     const cv::Scalar box_color(b, g, r);
 
+    // if BW, convet to BGR to show colored BBox
+    if (image.channels() == 1) {
+        cvtColor(image,image,CV_GRAY2BGR);
+    }
     // Draw a rectangle corresponding to this bbox with the given color
     cv::rectangle(image, rect, box_color, thickness);
 }

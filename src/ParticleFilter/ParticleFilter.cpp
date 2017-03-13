@@ -340,39 +340,57 @@ Helper functions
 */
 // feature computation
 MatND ParticleFilter::computeColorHistogram(BoundingBox & b, Mat & frame) {
-    // TODO: if frame is one channel (BW), then use intensity histogram instead
 #ifdef DEBUG_BOUNDINGBOX_BOUNDARY
     cout << "roi: \n" << b.x << "," << b.y << ", " << b.w << ", " << b.h << endl;
     cout << "frame W and H:" << frame.size().width  << ", " << frame.size().height << endl;
 #endif
-    Rect roi = Rect(b.x, b.y, b.w, b.h);
-	Mat frame_roi = frame(roi);
-    Mat frame_hsv;
-    cvtColor( frame_roi, frame_hsv, COLOR_BGR2HSV );
 
-    // convert to HSV and calculate hist
+    // TODO: if frame is one channel (BW), then use intensity histogram instead
+    if(frame.channels() == 1) {
+        // do 1D histogram calculation
+        Rect roi = Rect(b.x, b.y, b.w, b.h);
+        Mat frame_roi = frame(roi);
 
-    // Using 50 bins for hue and 60 for saturation
-    int h_bins = 50; int s_bins = 60;
-    int histSize[] = { h_bins, s_bins };
+        int bins = 64;
+        float range[] = {0, 256};
+        const float * ranges[] = {range};
 
-    // hue varies from 0 to 179, saturation from 0 to 255
-    float h_ranges[] = { 0, 180 };
-    float s_ranges[] = { 0, 256 };
+        MatND hist;
+        calcHist(&frame_roi, 1, 0, Mat(), hist, 1, &bins, ranges, true, false);
+        hist.convertTo(hist, CV_32F); // make sure is float
+        cout << "in calcHist BW :" << sum(hist) << endl;
+        return hist;
+    }
+    else {
+        Rect roi = Rect(b.x, b.y, b.w, b.h);
+        Mat frame_roi = frame(roi);
+        Mat frame_hsv;
+        cvtColor( frame_roi, frame_hsv, COLOR_BGR2HSV );
 
-    const float* ranges[] = { h_ranges, s_ranges };
+        // convert to HSV and calculate hist
 
-    // Use the o-th and 1-st channels
-    int channels[] = { 0, 1 };
+        // Using 50 bins for hue and 60 for saturation
+        int h_bins = 50; int s_bins = 60;
+        int histSize[] = { h_bins, s_bins };
 
-    MatND hist;
-    calcHist( &frame_hsv, 1, channels, Mat(), hist, 2, histSize, ranges, true, false );
-    hist.convertTo(hist, CV_32F); // make sure is float
-    cout << "in calcHist :" << sum(hist) << endl;
-    // normalize( hist, hist, 0, 1, NORM_MINMAX, -1, Mat() ); // do not normlise if want to factor in scale difference (number of pixel counts)
-    // normalize(hist, hist, 1, 0, NORM_L1);
-    cout << "in calcHist after normalisation:" << sum(hist) << endl;
-    return hist;
+        // hue varies from 0 to 179, saturation from 0 to 255
+        float h_ranges[] = { 0, 180 };
+        float s_ranges[] = { 0, 256 };
+
+        const float* ranges[] = { h_ranges, s_ranges };
+
+        // Use the o-th and 1-st channels
+        int channels[] = { 0, 1 };
+
+        MatND hist;
+        calcHist( &frame_hsv, 1, channels, Mat(), hist, 2, histSize, ranges, true, false );
+        hist.convertTo(hist, CV_32F); // make sure is float
+        cout << "in calcHist HS :" << sum(hist) << endl;
+        // normalize( hist, hist, 0, 1, NORM_MINMAX, -1, Mat() ); // do not normlise if want to factor in scale difference (number of pixel counts)
+        // normalize(hist, hist, 1, 0, NORM_L1);
+        cout << "in calcHist HS after normalisation:" << sum(hist) << endl;
+        return hist;
+    }
 }
 
 double ParticleFilter::computeLikelihood(MatND & this_hist, MatND & template_hist) {

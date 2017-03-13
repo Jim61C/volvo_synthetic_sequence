@@ -4,6 +4,19 @@
 #include <stdio.h>
 using namespace std;
 
+char parseDelimiter(string str) {
+    char delimiters [3] = {';', '\t', ','};
+
+    for (int i = 0;i< 3; i++) {
+        char this_char = delimiters[i];
+        if (str.find(this_char) != std::string::npos) {
+            return this_char;
+        }
+    }
+
+    return ' ';
+}
+
 int countNumberfLines(string txt_path) {
     ifstream myfile(txt_path);
 
@@ -22,6 +35,7 @@ void loadOneRawTxtFile(string txt_path, Mat & target) {
     ifstream rect_stream(txt_path);
     string next_line;
     string token;
+    char *delimiter = NULL; // next_line is expected to be space delimited
 
     int x, y, w, h;
     int num_frames = countNumberfLines(txt_path);
@@ -29,7 +43,24 @@ void loadOneRawTxtFile(string txt_path, Mat & target) {
 
     int i = 0;
     while (!rect_stream.eof()) {
-        getline(rect_stream, next_line); // next_line is expected to be space delimited
+        getline(rect_stream, next_line);
+        // parse delimter only once
+        if (delimiter == NULL) {
+            char parsed_delimiter = parseDelimiter(next_line);
+            delimiter = & parsed_delimiter;
+        }
+        // if not space delimited, tab, comma or semicolumn delimited, parse that 
+        if ((*delimiter) != ' ' && next_line.length() != 0) {
+            istringstream from_str_delimiter(next_line);
+            ostringstream out_str;
+            string token;
+            while (getline(from_str_delimiter, token, *delimiter)) {
+                out_str << token << ' ';
+            }
+
+            next_line = out_str.str();
+        }
+
         if (next_line.length() != 0) {
             istringstream iss (next_line);
             iss >> x;
@@ -89,20 +120,22 @@ void FrameLoader::load(DataManager & dm) {
 	// load frames
     if (this->data_source.compare("OTB") == 0) {
 		loadOTB(dm, this->directory+"/img", this->begin_frame, this->end_frame, this->step);
+
+        if (this->ground_truth_rect_path.compare("none") != 0) {
+            // directly load from the given ground_truth_rect_path
+            Mat rects;
+            loadOneRawTxtFile(this->ground_truth_rect_path, rects);
+
+            // TODO: check against dm.frames.size() and make sure they are consistent
+            dm.boxes.push_back(rects);
+        }
+        else {
+            // load bounding boxes by looking at *result*.txt
+            loadBoundingBoxes(dm);
+        }
+
+        // cout << "loaded gt:\n" << dm.boxes[0] << endl;
 	}
-
-    if (this->ground_truth_rect_path.compare("none") != 0) {
-        // directly load from the given ground_truth_rect_path
-        Mat rects;
-        loadOneRawTxtFile(this->ground_truth_rect_path, rects);
-
-        // TODO: check against dm.frames.size() and make sure they are consistent
-        dm.boxes.push_back(rects);
-    }
-    else {
-        // load bounding boxes by looking at *result*.txt
-        loadBoundingBoxes(dm);
-    }
 }
 
 
