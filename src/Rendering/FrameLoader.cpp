@@ -2,6 +2,9 @@
 #include <fstream>
 #include <sstream>
 #include <stdio.h>
+#include <math.h>
+#include <assert.h>
+#include <algorithm>    // std::min
 using namespace std;
 
 char parseDelimiter(string str) {
@@ -126,7 +129,11 @@ void FrameLoader::load(DataManager & dm) {
             Mat rects;
             loadOneRawTxtFile(this->ground_truth_rect_path, rects);
 
-            // TODO: check against dm.frames.size() and make sure they are consistent
+            // check against dm.frames.size() and make sure they are consistent
+            int frames_use = std::min((int)(dm.frames.size()), rects.rows);
+            rects = rects.rowRange(0,frames_use);
+            dm.frames.erase(dm.frames.begin()+frames_use, dm.frames.end());
+            assert (dm.frames.size() <= rects.rows); // make sure consistent frame number and groundtruth rect number
             dm.boxes.push_back(rects);
         }
         else {
