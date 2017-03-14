@@ -5,12 +5,14 @@
 class KinematicTreeNode {
 public:
     double r; // relative angle with parent, 0 for root
+    double d; // distance relative to parent
     string name;
     vector<KinematicTreeNode *> children;
 
     KinematicTreeNode();
-    KinematicTreeNode(double r);
-    KinematicTreeNode(double r, string name);
+    ~KinematicTreeNode();
+    KinematicTreeNode(double r, double d);
+    KinematicTreeNode(double r, double d, string name);
 };
 
 #endif

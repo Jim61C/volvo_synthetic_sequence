@@ -4,6 +4,7 @@
 Joint::Joint(double x, double y, string name) {
     this->x = x;
     this->y = y;
+    this->z = -1;
     this->is_2d = true;
     this->name = name;
 }
@@ -17,9 +18,10 @@ Joint::Joint(double x, double y, double z, string name) {
 }
 
 Joint::Joint() {
-    this->x = 0;
-    this->y = 0;
-    this->z = 0;
+    // NULL joint, the coordinates are all -1, invalid
+    this->x = -1;
+    this->y = -1;
+    this->z = -1;
     this->is_2d = true;
     this->name = "None";
     

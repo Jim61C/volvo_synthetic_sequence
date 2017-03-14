@@ -28,8 +28,8 @@ file(GLOB_RECURSE PF_SOURCE_FILES "src/ParticleFilter/*")
 # add_executable(${PROJECT_NAME} ${RENDERING_SOURCE_FILES} "src/main.cpp")
 # target_link_libraries(volvo ${OpenCV_LIBS})
 
-# add_executable(GeneratePoseFeature ${POSE_SOURCE_FILES} ${RENDERING_SOURCE_FILES} "src/main_pose.cpp")
-# target_link_libraries(GeneratePoseFeature ${OpenCV_LIBS})
+add_executable(GeneratePoseFeature ${POSE_SOURCE_FILES} ${RENDERING_SOURCE_FILES} "src/main_pose.cpp")
+target_link_libraries(GeneratePoseFeature ${OpenCV_LIBS})
 
 add_executable(PFTracker ${PF_SOURCE_FILES} ${POSE_SOURCE_FILES} ${RENDERING_SOURCE_FILES} "src/main_pf.cpp")
 target_link_libraries(PFTracker ${OpenCV_LIBS} ${GSLLIB})
