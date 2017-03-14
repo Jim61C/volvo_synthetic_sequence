@@ -11,6 +11,7 @@ public:
 
     KinematicTreeNode();
     ~KinematicTreeNode();
+    KinematicTreeNode(KinematicTreeNode * node); // deep copy
     KinematicTreeNode(double r, double d);
     KinematicTreeNode(double r, double d, string name);
 };

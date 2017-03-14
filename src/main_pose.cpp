@@ -1,7 +1,18 @@
 #include <iostream>
 #include <string>
 #include "Pose/PoseRepre.h"
+#include "ParticleFilter/BoundingBox.h"
+#include <assert.h>  
+#include <math.h>
 using namespace std;
+
+
+void printFeature(vector<double> & feature) {
+    for (int i =0;i< feature.size();i++) {
+        cout << feature[i] << " ";
+    }
+    cout << endl;
+}
 
 int main(int argc, char **argv) {
     cout << "in main_pose, test loading from pose.txt and generate features..." << endl;
@@ -10,7 +21,69 @@ int main(int argc, char **argv) {
     Mat frame = imread(input_frame_path, CV_LOAD_IMAGE_UNCHANGED);
     imshow("frame", frame);
     waitKey(0);
+    // test loading pose
     vector<Joint> joints_loaded = PoseRepre::loadOnePoseFromFile(pose_input_path);
+    PoseRepre::printJoints(joints_loaded);
+    Mat frame_with_pose = frame.clone();
+    // test drawing
+    PoseRepre::drawPoseOnFrame(frame_with_pose, joints_loaded);
+    imshow("frame", frame_with_pose);
+    waitKey(0);
+
+    Joint & neck_pos_2d = joints_loaded[1];
     
+    // test KinematricTree feaure representation
+    KinematicTreeNode *root = PoseRepre::constructKinematicTreeAuto(joints_loaded);
+    // test get feature
+    vector<double> feature = PoseRepre::getKinematicFeatureRepreGivenNode(root);
+    cout << "original feature: ";
+    printFeature(feature);
+
+    // test recover back
+    vector<Joint> recovered_joints = PoseRepre::recoverJointsFromKinematicTree(root, neck_pos_2d);
+    // PoseRepre::printJoints(recovered_joints);
+    assert(recovered_joints.size() == joints_loaded.size());
+    double epsilon = pow(10, -3);
+    for (int i = 0;i<recovered_joints.size();i++) {
+        assert(recovered_joints[i].is_2d == joints_loaded[i].is_2d);
+        assert(recovered_joints[i].name.compare(joints_loaded[i].name) == 0);
+        assert(abs(recovered_joints[i].x - joints_loaded[i].x) < epsilon);
+        assert(abs(recovered_joints[i].y - joints_loaded[i].y) < epsilon);
+    }
+
+    // test boundingBox
+    BoundingBox box = PoseRepre::getBoundingBoxFromPose(joints_loaded, frame_with_pose);
+    box.DrawBoundingBox(frame_with_pose);
+    imshow("frame", frame_with_pose);
+    waitKey(0);
+
+    // test deepcopy + perturb
+    KinematicTreeNode *root_copy = new KinematicTreeNode(root);
+    PoseRepre::deformPoseRandom(root_copy);
+    vector<double> deformed_feature = PoseRepre::getKinematicFeatureRepreGivenNode(root_copy);
+    cout << "deformed feature: ";
+    printFeature(deformed_feature);
+
+    vector<Joint> deformed_joints = PoseRepre::recoverJointsFromKinematicTree(root_copy, neck_pos_2d);
+    PoseRepre::printJoints(deformed_joints);
+
+    vector<Joint> original_joints = PoseRepre::recoverJointsFromKinematicTree(root, neck_pos_2d);
+    
+    Mat frame_with_original_pose = frame.clone();
+    // test drawing original pose
+    PoseRepre::drawPoseOnFrame(frame_with_original_pose, original_joints);
+    imshow("original pose", frame_with_original_pose);
+    waitKey(0);
+
+    Mat frame_with_deformed_pose = frame.clone();
+    // test drawing deformed pose
+    PoseRepre::drawPoseOnFrame(frame_with_deformed_pose, deformed_joints);
+    imshow("deformed pose", frame_with_deformed_pose);
+    waitKey(0);
+    
+
+
+    delete root; // must be there !!!
+    delete root_copy;
     return 0;
 }

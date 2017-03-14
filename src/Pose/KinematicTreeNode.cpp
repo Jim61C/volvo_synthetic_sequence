@@ -11,6 +11,22 @@ KinematicTreeNode::KinematicTreeNode() {
     this->name = "None";
 }
 
+void recursiveCopy(KinematicTreeNode *node, KinematicTreeNode *from_node) {
+    node->r = from_node->r;
+    node->d = from_node->d;
+    node->name = from_node->name;
+
+    for (int i = 0;i< from_node->children.size(); i++) {
+        KinematicTreeNode *new_child = new KinematicTreeNode();
+        node->children.push_back(new_child);
+        recursiveCopy(new_child, from_node->children[i]);
+    }
+}
+
+KinematicTreeNode::KinematicTreeNode(KinematicTreeNode * node) {
+    recursiveCopy(this, node);
+}
+
 KinematicTreeNode::KinematicTreeNode(double r, double d) {
     this->r = r;
     this->d = d;

@@ -1,9 +1,11 @@
 #include "PoseRepre.h"
 #include <math.h>
+#include <limits>
 #include <unordered_map>
 #include <assert.h>  
 #include <fstream>
 #include <sstream>
+
 
 // constructor
 PoseRepre::PoseRepre() {
@@ -17,8 +19,16 @@ PoseRepre::~PoseRepre() {
 }
 
 bool validJointDetected(Joint & j) {
-    if (j.x == -1 || j.y == -1 || j.z == -1 || j.name.compare("None") == 0) {
-        return false;
+    if (j.is_2d) {
+        if (j.x == -1 || j.y == -1 || j.name.compare("None") == 0) {
+            return false;
+        }
+    }
+    else {
+        // check all three coordinate
+        if (j.x == -1 || j.y == -1 || j.z == -1 || j.name.compare("None") == 0) {
+            return false;
+        }
     }
 
     return true;
@@ -68,10 +78,26 @@ vector<double> PoseRepre::getKinematicFeatureRepreGivenNode(KinematicTreeNode * 
 }
 
 void PoseRepre::deformPoseRandom(KinematicTreeNode * node) {
-    // TODO: deform randomly along the kinematic tree
+    const gsl_rng_type * T;
+    gsl_rng * r;
+    gsl_rng_env_setup();
+    T = gsl_rng_default;
+    r = gsl_rng_alloc (T);
+    gsl_rng_set(r, time(NULL));
+
+    // deform randomly along the kinematic tree, do not perturb root node
+    if (node->name.compare("neck") != 0) {
+        double deform_r = (gsl_rng_uniform (r) - 0.5) * PERTURBATION_RANGE; // -PI/4 to +Pi/4
+        node->r += deform_r;
+    }
+
+    // recurse on children
+    for (int i = 0;i< node->children.size(); i++) {
+        deformPoseRandom(node->children[i]);
+    }
 }
 
-KinematicTreeNode* PoseRepre::constructKinematicTreeMannual(vector<Joint> joints) {
+KinematicTreeNode* PoseRepre::constructKinematicTreeMannual(vector<Joint> & joints) {
     Joint& neck = joints[PoseEncoding::joint_name_to_idx["neck"]];
     KinematicTreeNode * root_node = new KinematicTreeNode(0, 0, "neck");
 
@@ -168,7 +194,7 @@ KinematicTreeNode* PoseRepre::constructKinematicTreeMannual(vector<Joint> joints
     return (root_node);
 }
 
-KinematicTreeNode* PoseRepre::constructKinematicTreeAuto(vector<Joint> joints) {
+KinematicTreeNode* PoseRepre::constructKinematicTreeAuto(vector<Joint> & joints) {
     unordered_map<string, KinematicTreeNode*> joint_name_to_node;
     KinematicTreeNode *root_node = new KinematicTreeNode(0, 0, "neck");
     joint_name_to_node.insert({"neck", root_node});
@@ -254,6 +280,63 @@ vector<Joint> PoseRepre::recoverJointsFromKinematicTree(KinematicTreeNode * root
     return recovered_joints;
 }
 
+BoundingBox PoseRepre::getBoundingBoxFromPose(vector <Joint> & joints, Mat & frame) {
+    int W = frame.size().width;
+    int H = frame.size().height;
+    
+    BoundingBox bbox;
+    double min_x = std::numeric_limits<double>::max();
+    double max_x = -1;
+    double min_y = std::numeric_limits<double>::max();
+    double max_y = -1;
+    for (int i = 0;i< joints.size();i++) {
+        Joint & this_joint = joints[i];
+        if (this_joint.x < min_x) {
+            min_x = this_joint.x;
+        }
+        if (this_joint.x > max_x) {
+            max_x = this_joint.x;
+        }
+        if (this_joint.y < min_y) {
+            min_y = this_joint.y;
+        }
+        if (this_joint.y > max_y) {
+            max_y = this_joint.y;
+        }
+    }
+
+    if (max_x != -1) {
+        // at least one joint is valid
+
+        // add padding
+        min_x -= POSE_BOX_PADDING;
+        max_x += POSE_BOX_PADDING;
+        min_y -= POSE_BOX_PADDING;
+        max_y += POSE_BOX_PADDING;
+
+        // check against boundaries
+        if (min_x < 0) {
+            min_x = 0;
+        }
+        if (min_y < 0) {
+            min_y = 0;
+        }
+        if (max_x > W - 1 ) {
+            max_x = W - 1;
+        }
+        if (max_y > H - 1) {
+            max_y = H - 1;
+        }
+
+        bbox.x = min_x;
+        bbox.y = min_y;
+        bbox.w = max_x - min_x;
+        bbox.h = max_y - min_y;
+    }
+
+    return bbox;
+}
+
 vector<Joint> PoseRepre::detectPoseGivenFrame(Mat & frame) {
     // do the python embedding here
     vector<Joint> joints;
@@ -279,10 +362,43 @@ vector<Joint> PoseRepre::loadOnePoseFromFile(string path) {
         }
     }
 
-    for(int i = 0;i< parsed_joints.size();i++) {
-        cout << parsed_joints[i].name << ": "<< parsed_joints[i].x << ", " << parsed_joints[i].y << ", " 
-        << parsed_joints[i].is_2d<< endl;
-    }
     return parsed_joints;
+}
+
+void PoseRepre::printJoints(vector<Joint> & joints) {
+    for(int i = 0;i< joints.size();i++) {
+        cout << i << ": " << joints[i].name << ": "<< joints[i].x << ", " << joints[i].y << ", " 
+        << joints[i].is_2d<< endl;
+    }
+}
+
+void PoseRepre::drawPoseOnFrame(Mat & frame, vector<Joint> & joints) {
+
+    // convert to 3 channle if BW
+    if (frame.channels() == 1) {
+        cvtColor(frame,frame,CV_GRAY2BGR);
+    }
+
+    for(int i = 0; i< PoseEncoding::limb_colors.size();i++) {
+        Mat this_frame = frame.clone();
+
+        pair<string, string> this_limb = PoseEncoding::limb_colors[i].first;
+        cv::Scalar this_color = PoseEncoding::limb_colors[i].second;
+        Joint p1 = joints[PoseEncoding::joint_name_to_idx[this_limb.first]];
+        Joint p2 = joints[PoseEncoding::joint_name_to_idx[this_limb.second]];
+
+        // make sure both joints are valid, then draw this limb
+        if (validJointDetected(p1) && validJointDetected(p2)) {
+            Point mid_point((p1.x + p2.x)/2.0, (p1.y + p2.y)/2.0);
+            double d = getDistanceBetweenJoints(p1, p2);
+            double angle = getRelativeAngleBetweenJoints(p1, p2) * 180.0 / PI;
+            cv::Size axes(d/2.0 , 4);
+
+            cv::ellipse(this_frame, mid_point, axes, angle, 0.0, 360.0, this_color, -1);
+
+            // make the limb ellipse translucent
+            addWeighted(frame, 0.4, this_frame, 0.6, 0, frame);
+        }
+    }
 }
 

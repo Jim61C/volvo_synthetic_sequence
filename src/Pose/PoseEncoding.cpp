@@ -88,11 +88,31 @@ vector<pair<string, vector<string> > > makeJointCorrespondences() {
     return joint_correspondences;
 }
 
+vector<pair<pair<string, string>, cv::Scalar> > makeLimbColors() {
+    vector<pair<pair<string, string>, cv::Scalar> > limb_colors;
+    
+    limb_colors.push_back(std::make_pair( std::make_pair("neck" , "Rsho"), cv::Scalar(255, 0, 0)));
+    limb_colors.push_back(std::make_pair( std::make_pair("neck" , "Lsho"), cv::Scalar(255, 85, 0)));
+    limb_colors.push_back(std::make_pair( std::make_pair("Rsho" , "Relb"), cv::Scalar(255, 170, 0)));
+    limb_colors.push_back(std::make_pair( std::make_pair("Relb" , "Rwri"), cv::Scalar(255, 255, 0)));
+    limb_colors.push_back(std::make_pair( std::make_pair("Lsho" , "Lelb"), cv::Scalar(170, 255, 0)));
+    limb_colors.push_back(std::make_pair( std::make_pair("Lelb" , "Lwri"), cv::Scalar(85, 255, 0)));
+    limb_colors.push_back(std::make_pair( std::make_pair("neck" , "Rhip"), cv::Scalar(0, 255, 0)));
+    limb_colors.push_back(std::make_pair( std::make_pair("Rhip" , "Rkne"), cv::Scalar(0, 255, 85)));
+    limb_colors.push_back(std::make_pair( std::make_pair("Rkne" , "Rank"), cv::Scalar(0, 255, 170)));
+    limb_colors.push_back(std::make_pair( std::make_pair("neck" , "Lhip"), cv::Scalar(0, 255, 255)));
+    limb_colors.push_back(std::make_pair( std::make_pair("Lhip" , "Lkne"), cv::Scalar(0, 170, 255)));
+    limb_colors.push_back(std::make_pair( std::make_pair("Lkne" , "Lank"), cv::Scalar(0, 85, 255)));
+    limb_colors.push_back(std::make_pair( std::make_pair("neck" , "head"), cv::Scalar(0, 0, 255)));
+
+    return limb_colors;
+}
 
 
 unordered_map<string, int> PoseEncoding::joint_name_to_idx = makeJointNameToIdx();
 vector<string> PoseEncoding::joint_names = makeJointNames();
 vector<pair<string, vector<string> > > PoseEncoding::joint_correspondences = makeJointCorrespondences();
+vector<pair<pair<string, string>, cv::Scalar> > PoseEncoding::limb_colors = makeLimbColors();
 
 
 // PoseEncoding::PoseEncoding() {
