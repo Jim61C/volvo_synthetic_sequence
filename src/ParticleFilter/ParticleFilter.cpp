@@ -6,7 +6,7 @@
 #define DEBUG_BBOX_SIZE
 
 ParticleFilter::ParticleFilter() {
-    this->N_particles = 100;
+    this->N_particles = NUM_PARTICLES;
     gsl_rng_env_setup();
     this->rng = gsl_rng_alloc(gsl_rng_mt19937);
     gsl_rng_set(this->rng, time(NULL));

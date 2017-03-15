@@ -7,6 +7,7 @@
 #include <gsl/gsl_rng.h> 
 #include <gsl/gsl_randist.h> /* GAUSSIAN*/
 
+#define NUM_PARTICLES 100
 #define TRANS_X_STD 0.5
 #define TRANS_Y_STD 1.0
 #define TRANS_S_STD 0.001
