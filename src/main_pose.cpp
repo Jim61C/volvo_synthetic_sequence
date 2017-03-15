@@ -106,6 +106,30 @@ void populateTestMultiPose() {
     // visualise
     imshow("frame_with_pose", frame_with_pose);
     waitKey(0);
+
+    // test pose given BoundingBox b1
+    BoundingBox b1(127, 243, 113, 168);
+    vector<Joint> joints_b1  = PoseRepre::findPoseInBoundingBox(multi_joints_loaded, b1);
+    Mat frame_with_one_pose = frame.clone();
+    PoseRepre::drawPoseOnFrame(frame_with_one_pose, joints_b1);
+    imshow("frame_with_one_pose", frame_with_one_pose);
+    waitKey(0);
+
+    // test pose given BoundingBox b2
+    BoundingBox b2(545, 19, 126, 383);
+    vector<Joint> joints_b2  = PoseRepre::findPoseInBoundingBox(multi_joints_loaded, b2);
+    frame_with_one_pose = frame.clone();
+    PoseRepre::drawPoseOnFrame(frame_with_one_pose, joints_b2);
+    imshow("frame_with_one_pose", frame_with_one_pose);
+    waitKey(0);
+
+    // test pose given BoundingBox b3
+    BoundingBox b3(545, 19, 126, 150);
+    vector<Joint> joints_b3  = PoseRepre::findPoseInBoundingBox(multi_joints_loaded, b3);
+    frame_with_one_pose = frame.clone();
+    PoseRepre::drawPoseOnFrame(frame_with_one_pose, joints_b3);
+    imshow("frame_with_one_pose", frame_with_one_pose);
+    waitKey(0);
 }
 
 int main(int argc, char **argv) {
