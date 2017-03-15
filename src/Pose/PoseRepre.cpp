@@ -492,8 +492,20 @@ vector<Joint> PoseRepre::findPoseInBoundingBox(vector<vector<Joint> > & multi_jo
     }
 
     assert(best_idx != -1);
+    
+    // return the joints from best_idx that is actually inside bbox, (-1,-1) if that joint is not inside
+    vector<Joint> results;
+    vector<Joint> & best_joints = multi_joints[best_idx];
+    for (int i = 0;i< best_joints.size();i++) {
+        if (validJointDetected(best_joints[i]) && jointInsideBoundingBox(best_joints[i], b)) {
+            results.push_back(best_joints[i]);
+        }
+        else {
+            results.push_back(Joint()); // dummy joints, indicating this joint not inside the box
+        }
+    }
 
-    return multi_joints[best_idx];
+    return results;
 }
 
 void PoseRepre::printJoints(vector<Joint> & joints) {
