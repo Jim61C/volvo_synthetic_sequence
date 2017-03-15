@@ -365,6 +365,137 @@ vector<Joint> PoseRepre::loadOnePoseFromFile(string path) {
     return parsed_joints;
 }
 
+vector<vector<Joint> > PoseRepre::loadPosesFromFile(string path) {
+    vector<vector<Joint> > multi_joints;
+    int num_person = -1;
+    ifstream pose_in_stream(path.c_str());
+    string next_line;
+    double x, y;
+
+    int i = 0;
+    while(!pose_in_stream.eof()) {
+        getline(pose_in_stream, next_line);
+        if (next_line.length() != 0) {
+            // parse number of people if not yet parsed
+            if (num_person == -1) {
+                int counter = 0;
+                istringstream is_with_space(next_line);
+                while(! is_with_space.eof()) {
+                    is_with_space >> x;
+                    is_with_space >> y;
+                    counter ++;
+                }
+
+                num_person = counter;
+                // initialise multi_joints with correct number of people
+                for (int j =0;j< num_person;j++) {
+                    multi_joints.push_back(vector<Joint>());
+                }
+            }
+
+            // start the actual assignment procedure
+            istringstream is_multi_person(next_line); // assume space delimited
+            for (int j =0;j< num_person;j++) {
+                is_multi_person >> x;
+                is_multi_person >> y;
+                multi_joints[j].push_back(Joint(x, y, PoseEncoding::joint_names[i]));
+            }
+
+            i++; // increment to parse next joint
+        }
+    }
+
+    return multi_joints;
+}
+
+bool jointInsideBoundingBox(Joint p, BoundingBox b) {
+    if (p.x >= b.x && 
+    p.x <= b.x + b.w && 
+    p.y >= b.y &&
+    p.y <= b.y + b.h) {
+        return true;
+    }
+
+    return false;
+}
+
+double distanceFromJointToBoxCenter(Joint p, BoundingBox b) {
+    double x_centre = b.x + b.w/2.0;
+    double y_centre = b.y + b.h/2.0;
+
+    double d = sqrt(pow(p.x - x_centre, 2) + pow(p.y - y_centre, 2));
+    return d;
+}
+
+Joint getPersonJointCentre2D(vector<Joint> & joints) {
+    double x_sum = 0;
+    double y_sum = 0;
+    int count;
+
+    for (int i =0;i<joints.size();i++) {
+        Joint this_joint = joints[i];
+        if (validJointDetected(this_joint)) {
+            x_sum += this_joint.x;
+            y_sum += this_joint.y;
+            count ++;
+        }
+    }
+
+    Joint centre(x_sum/count, y_sum/count, "None"); // not a valid joint, just a position, here declare as joint to reuse the model for convenience
+    return centre;
+}
+
+// finds the person with largest number of poses inside b, and construct vector<Joint> from there.
+vector<Joint> PoseRepre::findPoseInBoundingBox(vector<vector<Joint> > & multi_joints, BoundingBox b) {
+    vector<int> most_inclusive_idxes;
+    int max_n_joints_inside = -1;
+    for (int i = 0;i< multi_joints.size(); i ++) {
+        vector<Joint> & this_person_joints = multi_joints[i];
+        int count = 0;
+        for (int j = 0;j<this_person_joints.size();j++) {
+            if (validJointDetected(this_person_joints[j]) && jointInsideBoundingBox(this_person_joints[j], b)) {
+                count ++;
+            }
+        }
+        if (count > max_n_joints_inside) {
+            max_n_joints_inside = count;
+            most_inclusive_idxes.clear();
+            most_inclusive_idxes.push_back(i);
+        }
+        else if (count == max_n_joints_inside) {
+            most_inclusive_idxes.push_back(i);
+        }
+    }
+
+    if (max_n_joints_inside == 0) {
+        // none of the person pose are inside the given b
+        vector<Joint> dummy_joints;
+        for (int i =0;i< PoseEncoding::joint_names.size();i++) {
+            dummy_joints.push_back(Joint());
+        }
+
+        return dummy_joints;
+    }
+
+    // out of most_inclusive_idxes, choose the closest index
+    double min_distance = std::numeric_limits<double>::max();
+    int best_idx = -1;
+    
+    for (int i = 0;i< most_inclusive_idxes.size(); i++) {
+        int this_idx = most_inclusive_idxes[i];
+        Joint this_person_centre = getPersonJointCentre2D(multi_joints[this_idx]);
+        double this_d = distanceFromJointToBoxCenter(this_person_centre, b);
+        if (this_d < min_distance) {
+            min_distance = this_d;
+            best_idx = this_idx;
+        }
+    }
+
+    assert(best_idx != -1);
+
+    return multi_joints[best_idx];
+}
+
 void PoseRepre::printJoints(vector<Joint> & joints) {
     for(int i = 0;i< joints.size();i++) {
         cout << i << ": " << joints[i].name << ": "<< joints[i].x << ", " << joints[i].y << ", " 

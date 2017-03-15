@@ -14,8 +14,8 @@ void printFeature(vector<double> & feature) {
     cout << endl;
 }
 
-int main(int argc, char **argv) {
-    cout << "in main_pose, test loading from pose.txt and generate features..." << endl;
+void populateTestSinglePose() {
+    cout << "in populateTestSinglePose, test loading from txt with a single person's pose and generate features..." << endl;
     string pose_input_path = "/home/jimxing/proj/CPM/Realtime_Multi-Person_Pose_Estimation/testing/sample_image/Skater2_0001_pose.txt";
     string input_frame_path = "/home/jimxing/proj/CPM/Realtime_Multi-Person_Pose_Estimation/testing/sample_image/Skater2_0001.jpg";
     Mat frame = imread(input_frame_path, CV_LOAD_IMAGE_UNCHANGED);
@@ -85,5 +85,31 @@ int main(int argc, char **argv) {
 
     delete root; // must be there !!!
     delete root_copy;
+}
+
+void populateTestMultiPose() {
+    cout << "in populateTestMultiPose: Test loading frame with multiple people's poses." << endl;
+    string pose_input_path = "/home/jimxing/proj/CPM/Realtime_Multi-Person_Pose_Estimation/testing/sample_image/ski_all_poses.txt";
+    string input_frame_path = "/home/jimxing/proj/CPM/Realtime_Multi-Person_Pose_Estimation/testing/sample_image/ski.jpg";
+    Mat frame = imread(input_frame_path, CV_LOAD_IMAGE_UNCHANGED);
+    imshow("frame", frame);
+    waitKey(0);
+
+    // test loading mutliple people's joint inside
+    vector<vector<Joint> > multi_joints_loaded = PoseRepre::loadPosesFromFile(pose_input_path);
+    Mat frame_with_pose = frame.clone();
+    for (int i =0;i< multi_joints_loaded.size();i++) {
+        vector <Joint> & this_loaded_joints = multi_joints_loaded[i];
+        PoseRepre::drawPoseOnFrame(frame_with_pose, this_loaded_joints);
+    }
+
+    // visualise
+    imshow("frame_with_pose", frame_with_pose);
+    waitKey(0);
+}
+
+int main(int argc, char **argv) {
+    // populateTestSinglePose();
+    populateTestMultiPose();
     return 0;
 }

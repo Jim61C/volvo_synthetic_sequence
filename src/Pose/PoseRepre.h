@@ -55,6 +55,12 @@ public:
     // load from file a vector of joints, 14 by 2
     static vector<Joint> loadOnePoseFromFile(string path);
 
+    // path contains a file that has 14 by 2 * N joints coordinates (might contain (-1, -1))
+    static vector<vector<Joint> > loadPosesFromFile(string path);
+
+    // Find the poses visible in the given BoundingBox, return the 14 by 2 joints coordinates, might contain (-1, -1)
+    static vector<Joint> findPoseInBoundingBox(vector<vector<Joint> > & multi_joints, BoundingBox b);
+
     // print the joints
     static void printJoints(vector<Joint> & joints);
 
