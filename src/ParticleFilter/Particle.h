@@ -1,7 +1,7 @@
 #ifndef PARTICLE_H
 #define PARTICLE_H
 #include "BoundingBox.h"
-#include "../Pose/KinematicTreeNode.h"
+#include "../Pose/PoseRepre.h"
 #include <vector>
 
 struct Particle {
@@ -16,7 +16,7 @@ public:
     double w;
 
     // features
-    KinematicTreeNode pose_root; // root has r == 0
+    PoseRepre pose_repre; // KinematicTreeNode root has r == 0
     int synthetic_character_id = -1; // link to unity character id 
 
     // color HSV histogram
