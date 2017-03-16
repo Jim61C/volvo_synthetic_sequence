@@ -18,7 +18,7 @@
 #define GAUSSIAN_MULTIPLIER 5.0
 
 #define SCALE_VARIANCE 1.05
-#define SCALE_LEVEL 2 // -2, -1, 0, 1, 2, might wanna see how -1.5, -0.5, 0, 0.5, 1.5 works
+#define SCALE_LEVEL 2 // -2, -1, 0, 1, 2
 #define SCALE_STEP 1.0
 
 #define TEMPLATE_UPDATE_SIMILARITY_TH 0.0 // 0.0 never update template histogram
