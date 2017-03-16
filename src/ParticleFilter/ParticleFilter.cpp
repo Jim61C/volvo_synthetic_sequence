@@ -86,7 +86,7 @@ double ParticleFilter::updateLikelihood(Particle & p, Particle & template_roi, M
     double centre_x = p.roi.x + p.roi.w / 2.0;
     double centre_y = p.roi.y + p.roi.h / 2.0;
     
-    for (int i = -SCALE_LEVEL;i<= SCALE_LEVEL;i++) {
+    for (double i = -SCALE_LEVEL;i<= SCALE_LEVEL;i+=SCALE_STEP) {
         double this_s = pow(SCALE_VARIANCE, i) * 1.0;
         cout << "this_s:"<< this_s << endl;
 
