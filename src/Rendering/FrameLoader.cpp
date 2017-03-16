@@ -42,6 +42,10 @@ void loadOneRawTxtFile(string txt_path, Mat & target) {
 
     double x, y, w, h;
     int num_frames = countNumberfLines(txt_path);
+    if (num_frames == 0) {
+        cout << "zero frames read from ground_truth_rect_path, aborting."<< endl;
+        exit(-1);
+    }
     target = Mat::zeros(num_frames, 4, CV_64F);
 
     int i = 0;
