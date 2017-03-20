@@ -20,13 +20,13 @@ PoseRepre::~PoseRepre() {
 
 bool validJointDetected(Joint & j) {
     if (j.is_2d) {
-        if (j.x == -1 || j.y == -1 || j.name.compare("None") == 0) {
+        if (j.x < 0 || j.y < 0 || j.name.compare("None") == 0) {
             return false;
         }
     }
     else {
         // check all three coordinate
-        if (j.x == -1 || j.y == -1 || j.z == -1 || j.name.compare("None") == 0) {
+        if (j.x < 0 || j.y < 0 || j.z < 0 || j.name.compare("None") == 0) {
             return false;
         }
     }
@@ -74,6 +74,11 @@ vector<double> PoseRepre::getThisKinematicFeatureRepre() {
 vector<double> PoseRepre::getKinematicFeatureRepreGivenNode(KinematicTreeNode * node) {
     vector<double> results;
     inOrderWalk(node, results);
+
+    // make sure 14 dimension
+    while (results.size() < PoseEncoding::joint_names.size()) {
+        results.push_back(0);
+    }
     return results;
 }
 
@@ -232,6 +237,41 @@ KinematicTreeNode* PoseRepre::constructKinematicTreeAuto(vector<Joint> & joints)
     }
 
     return (root_node);
+}
+
+void constuctKinematicTreeFeaturesRecursive(KinematicTreeNode * node, vector<double> & feature, int &pos) {
+    if (pos == feature.size()) {
+        return;
+    }
+
+    string this_node_name = node->name;
+
+    // i is the index of the corre 
+    int i = 0;
+    for (i =0; i< PoseEncoding::joint_correspondences.size(); i++) {
+        std::pair<string, vector<string> > & this_corre = PoseEncoding::joint_correspondences[i];
+        if (this_corre.first.compare(this_node_name) == 0 ) {
+            break;
+        }
+    }
+    // if i has children
+    if (i !=  PoseEncoding::joint_correspondences.size()) {
+        vector<string> &children_names = PoseEncoding::joint_correspondences[i].second;
+        for (int j = 0; j< children_names.size();j++) {
+            KinematicTreeNode *this_child = new KinematicTreeNode(feature[pos], 50, children_names[j]);
+            pos ++; // move to next
+            node->children.push_back(this_child);
+
+            constuctKinematicTreeFeaturesRecursive(this_child, feature, pos);
+        }
+    }
+}
+
+KinematicTreeNode* PoseRepre::constructKinematicTreeFromFeatures(vector<double> & feature) {
+    KinematicTreeNode *root_node = new KinematicTreeNode(0, 0, "neck");
+    int pos = 1;
+    constuctKinematicTreeFeaturesRecursive(root_node, feature, pos);
+    return root_node;
 }
 
 Joint getChildJoint(Joint parent_joint, double r, double d, string child_joint_name) {
@@ -405,7 +445,40 @@ vector<vector<Joint> > PoseRepre::loadPosesFromFile(string path) {
         }
     }
 
+    // make sure that each vector has exactly 14 joint returned
+    for (int j = 0;j< multi_joints.size();j++) {
+        vector<Joint> & this_joints_loaded = multi_joints[j];
+        while (this_joints_loaded.size() < PoseEncoding::joint_names.size()) {
+            this_joints_loaded.push_back(Joint()); // push back dummy joints
+        }
+    }
+
     return multi_joints;
+}
+
+vector<vector<double> > PoseRepre::loadFeaturesFromFile(string path) {
+    vector<vector<double> > features;
+    double r;
+
+    ifstream feature_in_stream(path.c_str());
+    string next_line;
+    while(!feature_in_stream.eof()) {
+        getline(feature_in_stream, next_line);
+        if (next_line.length() != 0) {
+            vector<double> this_feature;
+
+            istringstream is_one_feature(next_line);
+            while (!is_one_feature.eof()) {
+                is_one_feature >> r;
+                this_feature.push_back(r);
+            }
+
+            features.push_back(this_feature);
+        }
+    }
+
+    return features;
+
 }
 
 bool jointInsideBoundingBox(Joint p, BoundingBox b) {

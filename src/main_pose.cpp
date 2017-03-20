@@ -36,6 +36,7 @@ void populateTestSinglePose() {
     KinematicTreeNode *root = PoseRepre::constructKinematicTreeAuto(joints_loaded);
     // test get feature
     vector<double> feature = PoseRepre::getKinematicFeatureRepreGivenNode(root);
+    cout << "feature.size():" << feature.size() << endl;
     cout << "original feature: ";
     printFeature(feature);
 
@@ -132,8 +133,149 @@ void populateTestMultiPose() {
     waitKey(0);
 }
 
+void populateTestPartialPose() {
+    cout << "in populateTestPartialPose: Test loading frame with partial people's poses." << endl;
+    string pose_input_path = "/home/jimxing/proj/CPM/Realtime_Multi-Person_Pose_Estimation/testing/sample_image/upper2_poses.txt";
+    string input_frame_path = "/home/jimxing/proj/CPM/Realtime_Multi-Person_Pose_Estimation/testing/sample_image/upper2.jpg";
+    Mat frame = imread(input_frame_path, CV_LOAD_IMAGE_UNCHANGED);
+    imshow("frame", frame);
+    waitKey(0);
+
+
+    // test loading mutliple people's joint inside
+    vector<vector<Joint> > multi_joints_loaded = PoseRepre::loadPosesFromFile(pose_input_path);
+    Mat frame_with_pose = frame.clone();
+    for (int i =0;i< multi_joints_loaded.size();i++) {
+        vector <Joint> & this_loaded_joints = multi_joints_loaded[i];
+        PoseRepre::drawPoseOnFrame(frame_with_pose, this_loaded_joints);
+    }
+
+    // visualise
+    imshow("frame_with_pose", frame_with_pose);
+    waitKey(0);
+
+    // Test partial poses to kinematic tree feature representation
+    for (int i =0;i< multi_joints_loaded.size();i++) {
+        vector <Joint> & this_loaded_joints = multi_joints_loaded[i];
+        Joint & neck_pos_2d = this_loaded_joints[1];
+        KinematicTreeNode *root = PoseRepre::constructKinematicTreeAuto(this_loaded_joints);
+
+        // test get feature
+        vector<double> feature = PoseRepre::getKinematicFeatureRepreGivenNode(root);
+        cout << "feature.size():" << feature.size() << endl;
+        cout << "original feature: ";
+        printFeature(feature);
+
+        // test recover back
+        vector<Joint> recovered_joints = PoseRepre::recoverJointsFromKinematicTree(root, neck_pos_2d);
+        
+        frame_with_pose = frame.clone();
+        // test drawing
+        PoseRepre::drawPoseOnFrame(frame_with_pose, recovered_joints);
+        imshow("recovered joints:", frame_with_pose);
+        waitKey(0);
+        delete root;
+    }
+
+}
+
+void populateSaveNYCPosesKinematicTreeFeature() {
+    cout << "in populateSaveNYCPosesKinematicTreeFeature:..." << endl;
+    string pose_input_path = "/home/jimxing/proj/CPM/Realtime_Multi-Person_Pose_Estimation/testing/sample_image/nyc_pose.txt";
+    
+    int W = 1024;
+    int H = 1024;
+    Mat canvas(H, W, CV_8UC3, Scalar(0,0,0));
+    imshow("canvas", canvas);
+    waitKey(0);
+
+    // test loading mutliple people's joint inside
+    vector<vector<Joint> > multi_joints_loaded = PoseRepre::loadPosesFromFile(pose_input_path);
+    cout << "number of poses loaded:" << multi_joints_loaded.size() << endl;
+    // visualise 10 of them
+    Mat canvas_with_pose = canvas.clone();
+    for (int i =0;i< 10;i++) {
+        vector <Joint> & this_loaded_joints = multi_joints_loaded[i];
+        PoseRepre::drawPoseOnFrame(canvas_with_pose, this_loaded_joints);
+        imshow("canvas_with_pose", canvas_with_pose);
+        waitKey(0);
+    }
+
+    vector<vector<double> > pose_features;
+    for (int i = 0; i< multi_joints_loaded.size(); i ++ ) {
+        vector<Joint> & this_loaded_joints = multi_joints_loaded[i];
+        Joint & neck_pos_2d = this_loaded_joints[1];
+        KinematicTreeNode *root = PoseRepre::constructKinematicTreeAuto(this_loaded_joints);
+        vector<double> this_feature = PoseRepre::getKinematicFeatureRepreGivenNode(root);
+        printFeature(this_feature);
+        delete root;
+    }
+}
+
+void visualiseNYCCentroids() {
+    cout << "in visualiseNYCCentroids:..." << endl;
+    string pose_input_path = "/home/jimxing/proj/CPM/Realtime_Multi-Person_Pose_Estimation/testing/sample_image/nyc_pose_centroids_2d.txt";
+
+    int W = 1024;
+    int H = 1024;
+    Mat canvas(H, W, CV_8UC3, Scalar(0,0,0));
+    imshow("canvas", canvas);
+    waitKey(0);
+
+    vector<vector<Joint> > multi_joints_loaded = PoseRepre::loadPosesFromFile(pose_input_path);
+    cout << multi_joints_loaded.size() << endl;
+
+    Mat canvas_with_pose = canvas.clone();
+    for (int i =0;i< 10;i++) {
+        vector <Joint> & this_loaded_joints = multi_joints_loaded[i];
+        cout << i << " joints loaded " << endl; 
+        PoseRepre::printJoints(this_loaded_joints);
+        PoseRepre::drawPoseOnFrame(canvas_with_pose, this_loaded_joints);
+        imshow("canvas", canvas_with_pose);
+        waitKey(0);
+    }
+}
+
+void visualiseNYCCentroidsKinematicFeature() {
+    cout << "in visualiseNYCCentroidsKinematicFeature..." << endl;
+    string kinematic_features_input = "/home/jimxing/proj/CPM/Realtime_Multi-Person_Pose_Estimation/testing/sample_image/nyc_pose_centroids_kinematic.txt";
+    
+    int W = 1024;
+    int H = 1024;
+    Mat canvas(H, W, CV_8UC3, Scalar(0,0,0));
+    imshow("canvas", canvas);
+    waitKey(0);
+
+    vector<vector <double> > loaded_features = PoseRepre::loadFeaturesFromFile(kinematic_features_input);
+    Mat canvas_with_pose = canvas.clone();
+    for (int i =0;i< loaded_features.size();i++) {
+        Joint neck_pos_2d(500, 500, "neck");
+        vector<double> & this_feature = loaded_features[i];
+        printFeature(this_feature);
+        KinematicTreeNode *root = PoseRepre::constructKinematicTreeFromFeatures(this_feature);
+        
+        // validate that feature is the same
+        vector<double> validate_feature = PoseRepre::getKinematicFeatureRepreGivenNode(root);
+        printFeature(validate_feature);
+
+        // test recover back
+        vector<Joint> recovered_joints = PoseRepre::recoverJointsFromKinematicTree(root, neck_pos_2d);
+        
+        // test drawing
+        canvas_with_pose = canvas.clone();
+        PoseRepre::drawPoseOnFrame(canvas_with_pose, recovered_joints);
+        imshow("recovered joints:", canvas_with_pose);
+        waitKey(0);
+        delete root;
+    }
+}
+
 int main(int argc, char **argv) {
     // populateTestSinglePose();
-    populateTestMultiPose();
+    // populateTestMultiPose();
+    populateTestPartialPose();
+    // visualiseNYCCentroids();
+    // populateSaveNYCPosesKinematicTreeFeature();
+    // visualiseNYCCentroidsKinematicFeature();
     return 0;
 }

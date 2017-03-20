@@ -43,6 +43,8 @@ public:
     // more clever way of constructing the tree
     static KinematicTreeNode* constructKinematicTreeAuto(vector<Joint> & joints);
 
+    static KinematicTreeNode* constructKinematicTreeFromFeatures(vector<double> & feature);
+
     // get bbox of the detected pose
     static BoundingBox getBoundingBoxFromPose(vector <Joint> & joints, Mat & frame);
 
@@ -57,6 +59,8 @@ public:
 
     // path contains a file that has 14 by 2 * N joints coordinates (might contain (-1, -1))
     static vector<vector<Joint> > loadPosesFromFile(string path);
+
+    static vector<vector<double> > loadFeaturesFromFile(string path);
 
     // Find the poses visible in the given BoundingBox, return the 14 by 2 joints coordinates, might contain (-1, -1)
     static vector<Joint> findPoseInBoundingBox(vector<vector<Joint> > & multi_joints, BoundingBox b);
