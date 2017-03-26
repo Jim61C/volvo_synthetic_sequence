@@ -39,7 +39,8 @@ void loadOneRawTxtFile(string txt_path, Mat & target) {
     string next_line;
     string token;
     char *delimiter = NULL; // next_line is expected to be space delimited
-
+    char parsed_delimiter; 
+    
     double x, y, w, h;
     int num_frames = countNumberfLines(txt_path);
     if (num_frames == 0) {
@@ -53,7 +54,7 @@ void loadOneRawTxtFile(string txt_path, Mat & target) {
         getline(rect_stream, next_line);
         // parse delimter only once
         if (delimiter == NULL) {
-            char parsed_delimiter = parseDelimiter(next_line);
+            parsed_delimiter = parseDelimiter(next_line);
             delimiter = & parsed_delimiter;
         }
         // if not space delimited, tab, comma or semicolumn delimited, parse that 
