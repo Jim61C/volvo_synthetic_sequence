@@ -7,7 +7,12 @@
 
 class PFTracker {
 public:
-    ParticleFilter pf;
+    // constructor
+    PFTracker(ParticleFilter *particle_filter) :
+    pf(particle_filter) {
+
+    }
+    ParticleFilter *pf;
     BoundingBox initial_box;
 
     void start(DataManager & dm, VideoWriter & writer);

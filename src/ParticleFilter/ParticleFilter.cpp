@@ -5,7 +5,9 @@
 // #define DEBUG_BOUNDINGBOX_BOUNDARY
 #define DEBUG_BBOX_SIZE
 
-ParticleFilter::ParticleFilter() {
+ParticleFilter::ParticleFilter(FeatureExtractorBase * feature_extractor) :
+feature_extractor_(feature_extractor)
+{
     this->N_particles = NUM_PARTICLES;
     gsl_rng_env_setup();
     this->rng = gsl_rng_alloc(gsl_rng_mt19937);

@@ -4,8 +4,13 @@
 #include "Rendering/FrameLoader.h"
 #include "ParticleFilter/PFTracker.h"
 #include "Rendering/AppConfig.h"
+#include "FeatureExtractor/FeatureExtractorCNN.h"
 
 int main(int argc, char **argv) {
+    FLAGS_alsologtostderr = 1;
+
+    ::google::InitGoogleLogging(argv[0]);
+
     AppConfig config;
     config = parseArgs(argc, argv);
     // input path 
@@ -44,7 +49,11 @@ int main(int argc, char **argv) {
         }
     }
 
-    PFTracker tracker;
+    const string VGG_M_prototxt = "../nets/models/VGGM_ROIPOOL/VGGM_ROIPOOL_NO_PAD_deploy.prototxt";
+    const string VGG_M_model_file = "../nets/models/VGGM_ROIPOOL/VGG_CNN_M.caffemodel";
+    FeatureExtractorCNN feature_extractor(VGG_M_prototxt, VGG_M_model_file, 0, 2, false);
+    ParticleFilter pf(&feature_extractor);
+    PFTracker tracker(&pf);
     tracker.start(dm, writer);  
 
     if (writer.isOpened()) {

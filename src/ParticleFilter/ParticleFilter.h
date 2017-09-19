@@ -6,6 +6,7 @@
 #include <time.h>       /* time */
 #include <gsl/gsl_rng.h> 
 #include <gsl/gsl_randist.h> /* GAUSSIAN*/
+#include "../FeatureExtractor/FeatureExtractorBase.h"
 
 #define NUM_PARTICLES 100
 #define TRANS_X_STD 0.5
@@ -30,9 +31,11 @@ public:
     Particle current_roi;
     Particle template_roi;
     gsl_rng* rng;
+    FeatureExtractorBase* feature_extractor_;
+
 
     // constructor
-    ParticleFilter();
+    ParticleFilter(FeatureExtractorBase * feature_extractor);
 
     // create initial particles, in a random manner, prior
     void initParticles(Mat &frame, BoundingBox & initial_box);
