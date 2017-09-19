@@ -3,7 +3,7 @@
 #include "../Rendering/DataManager.h"
 #include "ParticleFilter.h"
 
-#define WAIT_KEY_NUM_MILLISECONDS 10
+#define WAIT_KEY_NUM_MILLISECONDS 1
 
 class PFTracker {
 public:

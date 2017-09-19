@@ -63,6 +63,13 @@ void BoundingBox::DrawBoundingBox(cv::Mat & figure_ptr) {
     Draw(255, 255, 255, figure_ptr);
 }
 
+void BoundingBox::toTwoCornerCoordinates(double &x1, double &y1, double &x2, double &y2) const {
+    x1 = x;
+    y1 = y;
+    x2 = x + w;
+    y2 = y + h;
+}
+
 
 void BoundingBox::calBoundingBoxNewScale  (double s, BoundingBox &box) {
     double centre_x = this->x + this->w / 2.0;

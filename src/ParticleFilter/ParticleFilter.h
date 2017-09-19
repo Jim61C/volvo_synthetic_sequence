@@ -68,6 +68,8 @@ public:
     static MatND computeColorHistogram(BoundingBox & b, Mat & frame);
     // likelihood computation
     static double computeLikelihood(MatND & this_hist, MatND & tempalte_hist);
+    // convert the separate channel Mat to a MatND, feature is a vector of Mat with CV_32F (float)
+    static void convertFeatureToMatND(vector<Mat> & feature, MatND & result);
 
 };
 

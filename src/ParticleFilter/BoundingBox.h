@@ -32,6 +32,9 @@ public:
 
     // get bounding box center
     pair<double, double> getBoundingBoxCenter();
+
+    // to VOT coordinates
+    void toTwoCornerCoordinates(double &x1, double &y1, double &x2, double &y2) const;
 };
 
 #endif

@@ -37,3 +37,7 @@ build/
 
 # output videos
 output/
+
+# caffe models and assets
+*/**/*.caffemodel
+*/**/*.binaryproto

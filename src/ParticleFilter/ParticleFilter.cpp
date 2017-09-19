@@ -393,6 +393,21 @@ MatND ParticleFilter::computeColorHistogram(BoundingBox & b, Mat & frame) {
     }
 }
 
+
+void ParticleFilter::convertFeatureToMatND(vector<Mat> & feature, MatND & result) {
+    int channels = feature.size();
+    // corner case if number of channels is zero
+    if (channels == 0) {
+        const int size[] = {0, 0, channels};
+        result = cv::Mat(3, size, CV_32F);    
+    }
+    const int size[] = {feature[0].size().height, feature[0].size().width, channels};
+
+    result = cv::Mat(3, size, CV_32F);
+
+    cv::merge(feature, result);
+}
+
 double ParticleFilter::computeLikelihood(MatND & this_hist, MatND & template_hist) {
     // cout << "this_hist:" << sum(this_hist) << endl;
     // cout << "template_hist:" << sum(template_hist) << endl;
