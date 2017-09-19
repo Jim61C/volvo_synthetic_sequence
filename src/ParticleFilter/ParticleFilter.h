@@ -46,6 +46,8 @@ public:
 
     // observation model
     double updateLikelihood(Particle & p, Particle & template_roi, Mat & frame);
+    // enqueue bboxes of different scale [TODO: and aspect ratio]
+    void enqueueBBoxes(Particle & p, int particle_id, Mat & frame, vector<BoundingBox> &bboxes, vector<int> &particle_indexes);
     // make sure that weights of particles sum to 1
     void normalizeLikelihood();
     // invoke observation model for all particles
@@ -71,8 +73,10 @@ public:
     static MatND computeColorHistogram(BoundingBox & b, Mat & frame);
     // likelihood computation
     static double computeLikelihood(MatND & this_hist, MatND & tempalte_hist);
+    // likelihood computation given two spatial CNN blob features
+    static double computeLikelihoodSpatialFeature(vector<Mat> & f1, vector<Mat> & f2);
     // convert the separate channel Mat to a MatND, feature is a vector of Mat with CV_32F (float)
-    static void convertFeatureToMatND(vector<Mat> & feature, MatND & result);
+    // static void convertFeatureToMatND(vector<Mat> & feature, MatND & result);
 
 };
 

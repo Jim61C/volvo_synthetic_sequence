@@ -4,6 +4,7 @@
 
 // #define DEBUG_BOUNDINGBOX_BOUNDARY
 #define DEBUG_BBOX_SIZE
+#define DEBUG_MATND
 
 ParticleFilter::ParticleFilter(FeatureExtractorBase * feature_extractor) :
 feature_extractor_(feature_extractor)
@@ -139,6 +140,28 @@ double ParticleFilter::updateLikelihood(Particle & p, Particle & template_roi, M
     return p.w;
 }
 
+void ParticleFilter::enqueueBBoxes(Particle & p, int particle_id, Mat & frame, vector<BoundingBox> &bboxes, vector<int> &particle_indexes) {
+    
+    for (double i = -SCALE_LEVEL;i<= SCALE_LEVEL;i+=SCALE_STEP) {
+        double this_s = pow(SCALE_VARIANCE, i) * 1.0;
+        cout << "this_s:"<< this_s << endl;
+
+        BoundingBox this_box;
+        p.roi.calBoundingBoxNewScale (this_s, this_box);
+        
+        // make sure not out of boudary
+        if (this_box.x + this_box.w <= frame.size().width - 1 &&
+        this_box.x >= 0 && 
+        this_box.y + this_box.h <= frame.size().height - 1 &&
+        this_box.y >= 0 
+        ) {
+            bboxes.push_back(this_box);
+            particle_indexes.push_back(particle_id);
+        }
+    }
+
+}
+
 void ParticleFilter::rescale(Particle & p) {
     // s is updated, now rescale p and normalise s = 1
     BoundingBox new_roi;
@@ -169,15 +192,55 @@ void ParticleFilter::normalizeLikelihood() {
 }
 // invoke observation model for all particles
 void ParticleFilter::updateWeights(Mat & frame) {
-    for (int i =0;i<this->particles.size();i++) {
-        updateLikelihood(this->particles[i], this->template_roi, frame); // w, s get's updated here, best w, best s
+    // for (int i =0;i<this->particles.size();i++) {
+    //     updateLikelihood(this->particles[i], this->template_roi, frame); // w, s get's updated here, best w, best s
+    // }
+
+    // get likelihood in one go
+    vector<BoundingBox> bboxes;
+    vector<int> particle_indexes; // index of new bboxes corresponding to particle in particle_indexes
+    for (int i = 0; i < this->particles.size(); i++) {
+        enqueueBBoxes(this->particles[i], i, frame, bboxes, particle_indexes);
+    }
+
+    // get features
+    vector<vector<Mat> > features;
+    this->feature_extractor_->ExtractFeatureBBoxes(bboxes, frame, &features);
+    assert (features.size() == bboxes.size());
+    assert (features.size() == particle_indexes.size());
+    
+    // likelihoods
+    vector<double> likelihoods;
+    for (int i = 0; i < features.size(); i ++) {
+        likelihoods.push_back(computeLikelihoodSpatialFeature(features[i], this->template_roi.vgg_m_feature));
+    }
+
+    // update w of particles
+    vector<int> best_index; // index in bboxes
+    best_index.resize(this->particles.size());
+    // clear original w
+    for (int i = 0; i < this->particles.size(); i ++) {
+        this->particles[i].w = 0; 
+    }
+    for (int i = 0; i < features.size(); i ++) {
+        int this_particle_id = particle_indexes[i];
+        if (likelihoods[i] > this->particles[this_particle_id].w) {
+            this->particles[this_particle_id].w = likelihoods[i];
+            best_index[this_particle_id] = i;
+        }
     }
 
     normalizeLikelihood();
 
-    for (int i = 0;i<this->particles.size();i++) {
-        this->particles[i].rescale(); // update particle scale
-    }
+    // for (int i = 0;i<this->particles.size();i++) {
+    //     this->particles[i].rescale(); // update particle scale
+    // }
+
+    // update particle scale back to 1
+    for (int i = 0; i < this->particles.size(); i ++) {
+        this->particles[i].roi.setAsBox(bboxes[best_index[i]]);
+        this->particles[i].s = 1.0;
+    }    
 }
 
 // posterior, get weighted average of all particles, simple model always update, expect drift
@@ -222,10 +285,12 @@ void ParticleFilter::updateCurrentROI(Mat & frame) {
     // this->template_roi.roi.setBoxCoordinate((int)(x_bar), (int)(y_bar), (int)(w_bar), (int)(h_bar));
     // this->template_roi.s = 1.0; // since s already falled back for all particles
 
-    // TODO: only update the template if likelihood is high (or if appearance change much)
-    MatND estimate_color_feature = ParticleFilter::computeColorHistogram(this->current_roi.roi, frame);
-    this->current_roi.color_feature = estimate_color_feature;
-    double similarity = ParticleFilter::computeLikelihood(estimate_color_feature, this->template_roi.color_feature);
+    vector<BoundingBox> bboxes;
+    bboxes.push_back(this->current_roi.roi);
+    vector<vector<Mat> > features_vgg_m;
+    this->feature_extractor_->ExtractFeatureBBoxes(bboxes, frame, &features_vgg_m);
+    this->current_roi.vgg_m_feature = features_vgg_m[0];
+    double similarity = computeLikelihoodSpatialFeature(this->current_roi.vgg_m_feature, this->template_roi.vgg_m_feature);
     if (similarity < TEMPLATE_UPDATE_SIMILARITY_TH) {
         // if there is much appearance change, update template
         cout << "need to update template!!!" << endl;
@@ -234,8 +299,23 @@ void ParticleFilter::updateCurrentROI(Mat & frame) {
 
         this->template_roi.roi.setBoxCoordinate(x_bar, y_bar, w_bar, h_bar);
         this->template_roi.s = 1.0; // since s already falled back for all particles
-        this->template_roi.color_feature = estimate_color_feature;
+        this->template_roi.vgg_m_feature = this->current_roi.vgg_m_feature;
     }
+
+    // // TODO: only update the template if likelihood is high (or if appearance change much)
+    // MatND estimate_color_feature = ParticleFilter::computeColorHistogram(this->current_roi.roi, frame);
+    // this->current_roi.color_feature = estimate_color_feature;
+    // double similarity = ParticleFilter::computeLikelihood(estimate_color_feature, this->template_roi.color_feature);
+    // if (similarity < TEMPLATE_UPDATE_SIMILARITY_TH) {
+    //     // if there is much appearance change, update template
+    //     cout << "need to update template!!!" << endl;
+    //     this->template_roi.u = u_bar;
+    //     this->template_roi.v = v_bar;
+
+    //     this->template_roi.roi.setBoxCoordinate(x_bar, y_bar, w_bar, h_bar);
+    //     this->template_roi.s = 1.0; // since s already falled back for all particles
+    //     this->template_roi.color_feature = estimate_color_feature;
+    // }
 
     // // MAP
     // int MAP_idx = -1;
@@ -396,19 +476,50 @@ MatND ParticleFilter::computeColorHistogram(BoundingBox & b, Mat & frame) {
 }
 
 
-void ParticleFilter::convertFeatureToMatND(vector<Mat> & feature, MatND & result) {
-    int channels = feature.size();
-    // corner case if number of channels is zero
-    if (channels == 0) {
-        const int size[] = {0, 0, channels};
-        result = cv::Mat(3, size, CV_32F);    
+double ParticleFilter::computeLikelihoodSpatialFeature(vector<Mat> & f1, vector<Mat> & f2) {
+    assert (f1.size() == f2.size());
+    double sum_square = 0.0;
+    for (int i = 0; i < f1.size(); i ++) {
+        sum_square += pow(compareHist(f1[i], f2[i], CV_COMP_BHATTACHARYYA), 2); // CV_COMP_BHATTACHARYYA is actual distance, the lower better, between 0 and 1
     }
-    const int size[] = {feature[0].size().height, feature[0].size().width, channels};
 
-    result = cv::Mat(3, size, CV_32F);
-
-    cv::merge(feature, result);
+    double rms_dist = sqrt(sum_square/f1.size());
+    double density = gsl_ran_gaussian_pdf (rms_dist, HIST_DIST_LIKELI_STD);
+    cout << "distance :" << rms_dist << ", " << "density: " << density << endl;
+    return density;
 }
+
+// void ParticleFilter::convertFeatureToMatND(vector<Mat> & feature, MatND & result) {
+//     int channels = feature.size();
+//     // corner case if number of channels is zero
+//     if (channels == 0) {
+//         const int size[] = {0, 0, channels};
+//         result = cv::Mat(3, size, CV_32F);    
+//     }
+//     const int size[] = {feature[0].size().height, feature[0].size().width, channels};
+
+//     result = cv::Mat(3, size, CV_32F);
+// #ifdef DEBUG_MATND
+//     cout << "result.dims: " << result.dims << endl; 
+//     cout << "result.channels: " << result.channels() << endl; 
+//     for (int i = 0; i < result.dims; i++) {
+//         cout << result.size[i] << " ";
+//     }
+//     cout << endl;
+// #endif
+
+//     cv::merge(feature, result);
+
+
+// #ifdef DEBUG_MATND
+//     cout << "result.dims after merge: " << result.dims << endl; 
+//     cout << "result.channels after merge: " << result.channels() << endl; 
+//     for (int i = 0; i < result.dims; i++) {
+//         cout << result.size[i] << " ";
+//     }
+//     cout << endl;
+// #endif
+// }
 
 double ParticleFilter::computeLikelihood(MatND & this_hist, MatND & template_hist) {
     // cout << "this_hist:" << sum(this_hist) << endl;

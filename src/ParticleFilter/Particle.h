@@ -22,6 +22,9 @@ public:
     // color HSV histogram
     MatND color_feature;
 
+    // VGGM feature
+    vector<Mat> vgg_m_feature;
+
     // pose feature
     vector<double> pose_feature;
 

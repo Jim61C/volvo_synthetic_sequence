@@ -1,7 +1,8 @@
  #include "PFTracker.h"
  
-//  #define DRAW_PARTICLES
- 
+ #define DRAW_PARTICLES
+ #define DEBUG_CNN
+
  void PFTracker::start(DataManager & dm, VideoWriter & writer) {
     cout << "single tracking boxes.shape:" << dm.boxes[0].rows << ", " << dm.boxes[0].cols << endl;
     this->initial_box.setBox(dm.boxes[0].colRange(0, 4).rowRange(0,1));
@@ -13,6 +14,19 @@
     this->pf->current_roi.color_feature = hist;
     this->pf->template_roi.roi.setAsBox(this->initial_box);
     this->pf->template_roi.color_feature = hist;
+
+    // set template_roi vgg_m_feature
+    vector<BoundingBox> bboxes;
+    bboxes.push_back(this->pf->template_roi.roi);
+    vector<vector<Mat> > features_vggm;
+    this->pf->feature_extractor_->ExtractFeatureBBoxes(bboxes, frame_0, &features_vggm);
+    assert(features_vggm.size() == 1); // only one since bboxes only contains template_roi's bbox
+    this->pf->template_roi.vgg_m_feature = features_vggm[0];
+#ifdef DEBUG_CNN
+    cout << "[DEBUG_CNN] this->pf->template_roi.vgg_m_feature.size():" << this->pf->template_roi.vgg_m_feature.size() << endl;
+    cout << "[DEBUG_CNN] this->pf->template_roi.vgg_m_feature[0].size():" << this->pf->template_roi.vgg_m_feature[0].size() << endl;
+#endif
+
     // prior, initialise particles
     this->pf->initParticles(frame_0, this->initial_box);
 
