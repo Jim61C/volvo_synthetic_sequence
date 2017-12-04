@@ -1,4 +1,6 @@
  #include "PFTracker.h"
+//  #define DRAW_PARTICLES
+ #define DRAW_GT
  
  void PFTracker::start(DataManager & dm, VideoWriter & writer) {
     cout << "single tracking boxes.shape:" << dm.boxes[0].rows << ", " << dm.boxes[0].cols << endl;
@@ -32,19 +34,23 @@
         // before transition
         cout << "before particle transition" << endl;
         Mat cur_frame_to_display = cur_frame.clone();
+#ifdef DRAW_PARTICLES
         this->pf.DrawParticles(cur_frame_to_display);
         imshow("frame", cur_frame_to_display);
         waitKey(WAIT_KEY_NUM_MILLISECONDS);
+#endif
 
         // motion model
         this->pf.transition(cur_frame.size().width, cur_frame.size().height);
 
         //draw moved particles
+#ifdef DRAW_PARTICLES
         cout << "draw moved particles" << endl;
         cur_frame_to_display = cur_frame.clone();
         this->pf.DrawParticles(cur_frame_to_display);
         imshow("frame", cur_frame_to_display);
         waitKey(WAIT_KEY_NUM_MILLISECONDS);
+#endif
         
 
         // observation model
@@ -52,11 +58,13 @@
 
 
         //draw particles with their weigts indicating colors
+#ifdef DRAW_PARTICLES
         cout << "after weights, draw particles with colors indicating weights" << endl;
         cur_frame_to_display = cur_frame.clone();
         this->pf.DrawParticles(cur_frame_to_display);
         imshow("frame", cur_frame_to_display);
         waitKey(WAIT_KEY_NUM_MILLISECONDS);
+#endif
 
         // posterior
         this->pf.updateCurrentROI(cur_frame);
@@ -65,17 +73,21 @@
         this->pf.resampleParticles();
 
         //draw resampled particles, 
+#ifdef DRAW_PARTICLES
         cout << "after resampling of particles " << endl;
         cur_frame_to_display = cur_frame.clone();
         this->pf.DrawParticles(cur_frame_to_display);
+#endif
 
         // draw estimate
         this->pf.current_roi.roi.Draw(0, 255, 0, cur_frame_to_display);
 
+#ifdef DRAW_GT
         // draw gt
         BoundingBox cur_gt;
         cur_gt.setBox(dm.boxes[0].colRange(0, 4).rowRange(i,i+1));
         cur_gt.DrawBoundingBox(cur_frame_to_display);
+#endif
         
         // visualise
         imshow("frame", cur_frame_to_display);
