@@ -1,4 +1,6 @@
  #include "PFTracker.h"
+//  #define DRAW_PARTICLES
+ #define DRAW_GT
  
 // #define DRAW_PARTICLES
 #define DRAW_GT
@@ -42,6 +44,8 @@
         imshow("frame", cur_frame_to_display);
         waitKey(WAIT_KEY_NUM_MILLISECONDS);
 #endif 
+
+
         // motion model
         this->pf.transition(cur_frame.size().width, cur_frame.size().height);
 
@@ -67,6 +71,7 @@
         waitKey(WAIT_KEY_NUM_MILLISECONDS);
 #endif 
        
+
         // posterior
         this->pf.updateCurrentROI(cur_frame);
 
@@ -74,11 +79,12 @@
         this->pf.resampleParticles();
 
         //draw resampled particles, 
-        cur_frame_to_display = cur_frame.clone();
 #ifdef DRAW_PARTICLES
         cout << "after resampling of particles " << endl;
+        cur_frame_to_display = cur_frame.clone();
         this->pf.DrawParticles(cur_frame_to_display);
-#endif 
+#endif
+
         // draw estimate
         this->pf.current_roi.roi.Draw(0, 255, 0, cur_frame_to_display);
 
