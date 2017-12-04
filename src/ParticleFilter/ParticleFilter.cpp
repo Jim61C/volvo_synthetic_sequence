@@ -3,7 +3,8 @@
 #include <assert.h>  
 
 // #define DEBUG_BOUNDINGBOX_BOUNDARY
-#define DEBUG_BBOX_SIZE
+// #define DEBUG_BBOX_SIZE
+// #define DEBUG_LOG
 
 ParticleFilter::ParticleFilter() {
     this->N_particles = NUM_PARTICLES;
@@ -18,9 +19,9 @@ void ParticleFilter::initParticles(Mat &frame, BoundingBox & initial_box) {
         // create particle
         double dx_unit = (gsl_rng_uniform (this->rng) - 0.5); // -0.5 to 0.5
         double dy_unit = (gsl_rng_uniform (this->rng) - 0.5);
-        
+#ifdef DEBUG_LOG
         cout << "Particle ["<< this->particles.size() << "]" << "initial rand:" << dx_unit << ", " << dy_unit << endl;
-
+#endif
         double dx = dx_unit * INITIAL_SAMPLE_RANGE;
         double dy = dy_unit * INITIAL_SAMPLE_RANGE;
 
@@ -38,7 +39,6 @@ void ParticleFilter::initParticles(Mat &frame, BoundingBox & initial_box) {
 // motion model, make sure not out of image boundary
 void ParticleFilter::moveParticle(Particle & p, int W, int H) {
     // constant speed model, here scale is not touched, scale is varied in obsevation model to find the best scale
-    // cout <<"Gaussian change in new x:" << GAUSSIAN_MULTIPLIER * gsl_ran_gaussian(rng, TRANS_X_STD) << endl;
     double new_x = p.roi.x + p.u * DELTA_T + GAUSSIAN_MULTIPLIER * gsl_ran_gaussian(rng, TRANS_X_STD);
     double new_y = p.roi.y + p.v * DELTA_T + GAUSSIAN_MULTIPLIER * gsl_ran_gaussian(rng, TRANS_Y_STD);
 
@@ -88,9 +88,10 @@ double ParticleFilter::updateLikelihood(Particle & p, Particle & template_roi, M
     
     for (double i = -SCALE_LEVEL;i<= SCALE_LEVEL;i+=SCALE_STEP) {
         double this_s = pow(SCALE_VARIANCE, i) * 1.0;
+#ifdef DEBUG_LOG
         cout << "this_s:"<< this_s << endl;
+#endif
 
-        // cout << "centre_x:" << centre_x << ", centre_y" << centre_y << endl;
         BoundingBox this_box;
         p.roi.calBoundingBoxNewScale (this_s, this_box);
         
@@ -111,7 +112,9 @@ double ParticleFilter::updateLikelihood(Particle & p, Particle & template_roi, M
             cout << "this_box: " << this_box.x << ", " << this_box.y << ", " << this_box.w << ", " << this_box.h << endl;
 #endif
             MatND this_hist = ParticleFilter::computeColorHistogram(this_box, frame);
+#ifdef DEBUG_LOG
             cout << "returned hist: " << sum(this_hist) << endl;
+#endif
             double this_likeli = ParticleFilter::computeLikelihood(this_hist, template_hist);
             // TODO: penalise large BoundingBox Difference
             if (this_likeli > best_likeli) {
@@ -129,7 +132,10 @@ double ParticleFilter::updateLikelihood(Particle & p, Particle & template_roi, M
     // assert (best_s == 1.0);
 
 #endif
+
+#ifdef DEBUG_LOG
     cout << "best_likeli:" << best_likeli << endl;
+#endif
     p.w = best_likeli;
     p.s = best_s;
     p.color_feature = best_hist;
@@ -154,7 +160,9 @@ void ParticleFilter::normalizeLikelihood() {
 
     if (sum == 0) {
         // all particles are having weights zero, all of them are going out of boundary, failure case
+#ifdef DEBUG_LOG
         cout << "Failure: All particles are going out of boundary!" << endl;
+#endif
         for (int i = 0;i < this->particles.size();i++) {
             this->particles[i].w = 1.0/this->particles.size();
         }
@@ -199,7 +207,6 @@ void ParticleFilter::updateCurrentROI(Mat & frame) {
         h_bar += this_p.roi.h * this_p.w;
         u_bar += this_p.u * this_p.w;
         v_bar += this_p.v * this_p.w;
-        // cout << "particle[" << i << "].w: " << this_p.w << endl; 
     }
 
     this->current_roi.u = u_bar;
@@ -226,7 +233,9 @@ void ParticleFilter::updateCurrentROI(Mat & frame) {
     double similarity = ParticleFilter::computeLikelihood(estimate_color_feature, this->template_roi.color_feature);
     if (similarity < TEMPLATE_UPDATE_SIMILARITY_TH) {
         // if there is much appearance change, update template
+#ifdef DEBUG_LOG
         cout << "need to update template!!!" << endl;
+#endif
         this->template_roi.u = u_bar;
         this->template_roi.v = v_bar;
 
@@ -278,9 +287,10 @@ void ParticleFilter::resampleParticles() {
     vector <Particle> new_particles;
     // sort the current particles by their weights
     std::sort(this->particles.begin(), this->particles.end(), particleComparison);
-    
+#ifdef DEBUG_LOG
     cout << "best particle weight:" << this->particles[0].w << endl;
     cout << "2nd best particle weight:" << this->particles[1].w << endl;
+#endif
 
     for (int i =0;i< this->particles.size() && new_particles.size() < this->N_particles;i++) {
         int n_from_this = floor(this->particles[i].w * this->particles.size());
@@ -288,8 +298,9 @@ void ParticleFilter::resampleParticles() {
             new_particles.push_back(this->particles[i]); // creat n_from_this copies of this particle
         }
     }
-
+#ifdef DEBUG_LOG
     cout << "after initial resampling, new_particles.size():" << new_particles.size() << endl;
+#endif
     
     // if not enough, copy the particle having heighest weight (TODO: might need to change this)
     while (new_particles.size() < this->N_particles) {
@@ -320,7 +331,9 @@ void ParticleFilter::DrawParticles(Mat & frame) {
 
     int min_w_color = 60;
     int max_w_color = 255;
+#ifdef DEBUG_LOG
     cout << "min_w:" << min_w << ", max_w:" << max_w << endl;
+#endif
 
     if (min_w == max_w) {
         for (int i =0;i<this->particles.size();i++) {
@@ -358,7 +371,9 @@ MatND ParticleFilter::computeColorHistogram(BoundingBox & b, Mat & frame) {
         MatND hist;
         calcHist(&frame_roi, 1, 0, Mat(), hist, 1, &bins, ranges, true, false);
         hist.convertTo(hist, CV_32F); // make sure is float
+#ifdef DEBUG_LOG
         cout << "in calcHist BW :" << sum(hist) << endl;
+#endif
         return hist;
     }
     else {
@@ -385,20 +400,24 @@ MatND ParticleFilter::computeColorHistogram(BoundingBox & b, Mat & frame) {
         MatND hist;
         calcHist( &frame_hsv, 1, channels, Mat(), hist, 2, histSize, ranges, true, false );
         hist.convertTo(hist, CV_32F); // make sure is float
+#ifdef DEBUG_LOG
         cout << "in calcHist HS :" << sum(hist) << endl;
+#endif
         // normalize( hist, hist, 0, 1, NORM_MINMAX, -1, Mat() ); // do not normlise if want to factor in scale difference (number of pixel counts)
         // normalize(hist, hist, 1, 0, NORM_L1);
+#ifdef DEBUG_LOG
         cout << "in calcHist HS after normalisation:" << sum(hist) << endl;
+#endif
         return hist;
     }
 }
 
 double ParticleFilter::computeLikelihood(MatND & this_hist, MatND & template_hist) {
-    // cout << "this_hist:" << sum(this_hist) << endl;
-    // cout << "template_hist:" << sum(template_hist) << endl;
     double distance = compareHist( this_hist, template_hist, CV_COMP_BHATTACHARYYA ); // CV_COMP_BHATTACHARYYA is actual distance, the lower better, between 0 and 1
     double density = gsl_ran_gaussian_pdf (distance, HIST_DIST_LIKELI_STD);
+#ifdef DEBUG_LOG
     cout << "distance :" << distance << ", " << "density: " << density << endl;
+#endif
     // Mat draw;
     // // distanceTransform(img,draw,CV_DIST_L2,5);
 

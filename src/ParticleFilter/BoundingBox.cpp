@@ -24,7 +24,6 @@ void BoundingBox::setBoxCoordinate(double x, double y, double w, double h) {
 }
 
 void BoundingBox::setBox(Mat rect) {
-    cout << rect<< endl;
     this->x = rect.at<double>(0, 0);
     this->y= rect.at<double>(0, 1);
     this->w = rect.at<double>(0, 2);
@@ -59,7 +58,6 @@ void BoundingBox::Draw(const int r, const int g, const int b, cv::Mat & image, c
 
 // Draw a white rectangle corresponding to this bbox.
 void BoundingBox::DrawBoundingBox(cv::Mat & figure_ptr) {
-    // cout << "In drawing bounding box, " << "x:" << this->x << ",y:" << this->y << ", w:" << this->w << ",h:" << this->h << endl;
     Draw(255, 255, 255, figure_ptr);
 }
 

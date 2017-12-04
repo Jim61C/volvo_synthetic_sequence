@@ -27,7 +27,6 @@ AppConfig parseArgs(int argc, char**argv) {
     // parse the options
     int c;
     while ((c = getopt(argc,argv, "vo:")) != -1) {
-        // cout << "option parsed:" << (char)(c) << endl;
         switch (c) {
             case 'v':
             config.verbose = true;

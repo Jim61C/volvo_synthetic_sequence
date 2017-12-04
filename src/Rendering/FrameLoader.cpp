@@ -106,7 +106,6 @@ void FrameLoader::loadOTB(DataManager& dm, string directory, int begin_frame, in
         while((entry = readdir(p_dir))!= NULL){
             if( has_suffix(entry->d_name, ".png") || has_suffix(entry->d_name, ".jpg") ) {
                 string this_img_path = (directory + entry->d_name);
-                // cout << this_img_path << endl;
                 img_name_list.push_back(this_img_path);
                 index++;
             }
@@ -146,7 +145,6 @@ void FrameLoader::load(DataManager & dm) {
             loadBoundingBoxes(dm);
         }
 
-        // cout << "loaded gt:\n" << dm.boxes[0] << endl;
 	}
 }
 
