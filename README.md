@@ -1,5 +1,5 @@
 # A Particle Filter Tracker for synthetic sequence generation
-A particle Filter tracker that assumes 1st order dynamics model for motion and uses Color Histograms as Observation Model.
+A particle Filter tracker that assumes 1st order dynamics motion model and uses Color Histograms as Observation Model.
 
 Dependencies
 ======================
