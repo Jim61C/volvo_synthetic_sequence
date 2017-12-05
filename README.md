@@ -5,8 +5,9 @@ Dependencies
 ======================
 - OpenCV3.2.0
 - GSL
-Installation Instruction (on Ubuntu16.04)
 
+Installation Instruction (on Ubuntu16.04)
+======================
 OpenCV with CUDA acceleration
 ```
 sudo apt-get install -y liblapacke-dev checkinstall
